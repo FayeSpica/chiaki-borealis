@@ -430,7 +430,7 @@ static chiaki_socket_t regist_search_connect(ChiakiRegist *regist, struct addrin
 		//if(ai->ai_protocol != IPPROTO_UDP)
 		//	continue;
 
-		if(ai->ai_addr->sa_family != AF_INET) // TODO: support IPv6
+		if(ai->ai_addr->sa_family != AF_INET && ai->ai_addr->sa_family != AF_INET6) // TODO: support IPv6
 			continue;
 
 		if(ai->ai_addrlen > *send_addr_len)
