@@ -23,7 +23,8 @@ data class RegisteredHost(
 	@ColumnInfo(name = "server_nickname") val serverNickname: String?,
 	@ColumnInfo(name = "rp_regist_key", typeAffinity = BLOB) val rpRegistKey: ByteArray, // CHIAKI_SESSION_AUTH_SIZE
 	@ColumnInfo(name = "rp_key_type") val rpKeyType: Int,
-	@ColumnInfo(name = "rp_key", typeAffinity = BLOB) val rpKey: ByteArray // 0x10
+	@ColumnInfo(name = "rp_key", typeAffinity = BLOB) val rpKey: ByteArray, // 0x10
+	@ColumnInfo(name = "psn_account_id") val psnAccountId: String?
 )
 {
 	constructor(registHost: RegistHost) : this(
@@ -36,7 +37,22 @@ data class RegisteredHost(
 		serverNickname = registHost.serverNickname,
 		rpRegistKey = registHost.rpRegistKey,
 		rpKeyType = registHost.rpKeyType.toInt(),
-		rpKey = registHost.rpKey
+		rpKey = registHost.rpKey,
+		psnAccountId = ""
+	)
+
+	constructor(registHost: RegistHost, psnAccountId: String) : this(
+		target = registHost.target,
+		apSsid = registHost.apSsid,
+		apBssid = registHost.apBssid,
+		apKey = registHost.apKey,
+		apName = registHost.apName,
+		serverMac = MacAddress(registHost.serverMac),
+		serverNickname = registHost.serverNickname,
+		rpRegistKey = registHost.rpRegistKey,
+		rpKeyType = registHost.rpKeyType.toInt(),
+		rpKey = registHost.rpKey,
+		psnAccountId = psnAccountId
 	)
 
 	override fun equals(other: Any?): Boolean
@@ -57,6 +73,7 @@ data class RegisteredHost(
 		if(!rpRegistKey.contentEquals(other.rpRegistKey)) return false
 		if(rpKeyType != other.rpKeyType) return false
 		if(!rpKey.contentEquals(other.rpKey)) return false
+		if(psnAccountId != other.psnAccountId) return false
 
 		return true
 	}
@@ -74,6 +91,7 @@ data class RegisteredHost(
 		result = 31 * result + rpRegistKey.contentHashCode()
 		result = 31 * result + rpKeyType
 		result = 31 * result + rpKey.contentHashCode()
+		result = 31 * result + (psnAccountId?.hashCode() ?: 0)
 		return result
 	}
 }
@@ -84,11 +102,11 @@ interface RegisteredHostDao
 	@Query("SELECT * FROM registered_host")
 	fun getAll(): Flowable<List<RegisteredHost>>
 
-	@Query("SELECT * FROM registered_host WHERE server_mac == :mac LIMIT 1")
-	fun getByMac(mac: MacAddress): Maybe<RegisteredHost>
+	@Query("SELECT * FROM registered_host WHERE server_mac == :mac AND psn_account_id == :psnAccountId LIMIT 1")
+	fun getByMacAndPsnAccountId(mac: MacAddress, psnAccountId: String): Maybe<RegisteredHost>
 
-	@Query("DELETE FROM registered_host WHERE server_mac == :mac")
-	fun deleteByMac(mac: MacAddress): Completable
+	@Query("DELETE FROM registered_host WHERE server_mac == :mac AND psn_account_id == :psnAccountId")
+	fun deleteByMacAndPsnAccountId(mac: MacAddress, psnAccountId: String): Completable
 
 	@Delete
 	fun delete(host: RegisteredHost): Completable

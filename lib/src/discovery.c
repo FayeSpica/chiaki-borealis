@@ -349,13 +349,23 @@ CHIAKI_EXPORT ChiakiErrorCode chiaki_discovery_wakeup(ChiakiLog *log, ChiakiDisc
 	socklen_t addr_len = 0;
 	for(struct addrinfo *ai=addrinfos; ai; ai=ai->ai_next)
 	{
-		if(ai->ai_family != AF_INET)
+		if(ai->ai_family != AF_INET && ai->ai_family != AF_INET6)
 			continue;
 		//if(ai->ai_protocol != IPPROTO_UDP)
 		//	continue;
-		if(ai->ai_addrlen > sizeof(addr))
-			continue;
-		memcpy(&addr, ai->ai_addr, ai->ai_addrlen);
+		if(ai->ai_addr->sa_family == AF_INET) {
+            // ai_addr is sockaddr_in
+            CHIAKI_LOGI(log, "AF_INET");
+        }
+
+        if(ai->ai_addr->sa_family == AF_INET6) {
+            // ai_addr is sockaddr_in6
+            CHIAKI_LOGI(log, "AF_INET6");
+        }
+		// if(ai->ai_addrlen > sizeof(addr))
+		// 	continue;
+		//memcpy(&addr, ai->ai_addr, ai->ai_addrlen);
+		addr = *(struct sockaddr *)ai->ai_addr;
 		addr_len = ai->ai_addrlen;
 		break;
 	}
@@ -367,7 +377,9 @@ CHIAKI_EXPORT ChiakiErrorCode chiaki_discovery_wakeup(ChiakiLog *log, ChiakiDisc
 		return CHIAKI_ERR_UNKNOWN;
 	}
 
-	((struct sockaddr_in *)&addr)->sin_port = htons(ps5 ? CHIAKI_DISCOVERY_PORT_PS5 : CHIAKI_DISCOVERY_PORT_PS4);
+	//((struct sockaddr_in *)&addr)->sin_port = htons(ps5 ? CHIAKI_DISCOVERY_PORT_PS5 : CHIAKI_DISCOVERY_PORT_PS4);
+
+	set_port(&addr, htons(ps5 ? CHIAKI_DISCOVERY_PORT_PS5 : CHIAKI_DISCOVERY_PORT_PS4));
 
 	ChiakiDiscoveryPacket packet = { 0 };
 	packet.cmd = CHIAKI_DISCOVERY_CMD_WAKEUP;

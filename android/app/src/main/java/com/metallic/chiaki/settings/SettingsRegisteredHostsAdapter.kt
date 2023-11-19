@@ -27,7 +27,7 @@ class SettingsRegisteredHostsAdapter: RecyclerView.Adapter<SettingsRegisteredHos
 	override fun onBindViewHolder(holder: ViewHolder, position: Int)
 	{
 		val host = hosts[position]
-		holder.binding.nameTextView.text = "${host.serverNickname} (${if(host.target.isPS5) "PS5" else "PS4"})"
+		holder.binding.nameTextView.text = "${host.serverNickname} (${if(host.target.isPS5) "PS5" else "PS4"}) (${host.psnAccountId})"
 		holder.binding.summaryTextView.text = host.serverMac.toString()
 	}
 }

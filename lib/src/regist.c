@@ -352,12 +352,14 @@ static ChiakiErrorCode regist_search(ChiakiRegist *regist, struct addrinfo *addr
 	CHIAKI_LOGI(regist->log, "Regist starting search");
 	struct sockaddr send_addr;
 	socklen_t send_addr_len = sizeof(send_addr);
+    CHIAKI_LOGI(regist->log, "regist_search_connect start");
 	chiaki_socket_t sock = regist_search_connect(regist, addrinfos, &send_addr, &send_addr_len);
 	if(CHIAKI_SOCKET_IS_INVALID(sock))
 	{
 		CHIAKI_LOGE(regist->log, "Regist eventually failed to connect for search");
 		return CHIAKI_ERR_NETWORK;
 	}
+    CHIAKI_LOGI(regist->log, "regist_search_connect end");
 
 	ChiakiErrorCode err = CHIAKI_ERR_SUCCESS;
 
@@ -419,6 +421,7 @@ static ChiakiErrorCode regist_search(ChiakiRegist *regist, struct addrinfo *addr
 
 done:
 	CHIAKI_SOCKET_CLOSE(sock);
+    CHIAKI_LOGI(regist->log, "Regist ending search");
 	return err;
 }
 
@@ -433,14 +436,30 @@ static chiaki_socket_t regist_search_connect(ChiakiRegist *regist, struct addrin
 		if(ai->ai_addr->sa_family != AF_INET && ai->ai_addr->sa_family != AF_INET6) // TODO: support IPv6
 			continue;
 
-		if(ai->ai_addrlen > *send_addr_len)
-			continue;
-		memcpy(send_addr, ai->ai_addr, ai->ai_addrlen);
-		*send_addr_len = ai->ai_addrlen;
+        if(ai->ai_addr->sa_family == AF_INET) {
+            // ai_addr is sockaddr_in
+            CHIAKI_LOGV(regist->log, "AF_INET");
+        }
+
+        if(ai->ai_addr->sa_family == AF_INET6) {
+            // ai_addr is sockaddr_in6
+            CHIAKI_LOGV(regist->log, "AF_INET6");
+        }
+
+        CHIAKI_LOGV(regist->log, "ai->ai_addrlen=%d, send_addr_len=%d", ai->ai_addrlen, *send_addr_len);
+
+		//if(ai->ai_addrlen > *send_addr_len)
+		//	continue;
+		// memcpy(send_addr, ai->ai_addr, ai->ai_addrlen);
+        send_addr = (struct sockaddr *)ai->ai_addr;
+
+        *send_addr_len = ai->ai_addrlen;
 
 		set_port(send_addr, htons(REGIST_PORT));
 
 		sock = socket(ai->ai_family, SOCK_DGRAM, IPPROTO_UDP);
+        CHIAKI_LOGV(regist->log, "socket() return: %d", sock);
+        CHIAKI_LOGV(regist->log, "send_addr: %d", send_addr->sa_family);
 		if(CHIAKI_SOCKET_IS_INVALID(sock))
 		{
 			CHIAKI_LOGE(regist->log, "Regist failed to create socket for search");
@@ -497,7 +516,8 @@ connect_fail:
 
 static chiaki_socket_t regist_request_connect(ChiakiRegist *regist, const struct sockaddr *addr, size_t addr_len)
 {
-	chiaki_socket_t sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    CHIAKI_LOGV(regist->log, "regist_request_connect sa_family: %d, addr_len: %d", addr->sa_family, addr_len);
+    chiaki_socket_t sock = socket(addr->sa_family, SOCK_STREAM, IPPROTO_TCP);
 	if(CHIAKI_SOCKET_IS_INVALID(sock))
 	{
 		return CHIAKI_INVALID_SOCKET;

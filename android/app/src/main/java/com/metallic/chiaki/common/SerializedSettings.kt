@@ -41,7 +41,8 @@ class SerializedRegisteredHost(
 	@Json(name = "server_nickname") val serverNickname: String?,
 	@Json(name = "rp_regist_key") val rpRegistKey: ByteArray,
 	@Json(name = "rp_key_type") val rpKeyType: Int,
-	@Json(name = "rp_key") val rpKey: ByteArray
+	@Json(name = "rp_key") val rpKey: ByteArray,
+	@Json(name = "psn_account_id") val psnAccountId: String?
 ){
 	constructor(registeredHost: RegisteredHost) : this(
 		registeredHost.target,
@@ -53,7 +54,8 @@ class SerializedRegisteredHost(
 		registeredHost.serverNickname,
 		registeredHost.rpRegistKey,
 		registeredHost.rpKeyType,
-		registeredHost.rpKey
+		registeredHost.rpKey,
+		registeredHost.psnAccountId
 	)
 }
 
@@ -265,7 +267,8 @@ abstract class ImportDao
 					serverNickname = it.serverNickname,
 					rpRegistKey = it.rpRegistKey,
 					rpKeyType = it.rpKeyType,
-					rpKey = it.rpKey
+					rpKey = it.rpKey,
+					psnAccountId = it.psnAccountId
 				)
 		})
 

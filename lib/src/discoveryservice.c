@@ -226,7 +226,7 @@ static void discovery_service_host_received(ChiakiDiscoveryHost *host, void *use
 		if(!service->hosts[i].host_id)
 			continue;
 
-		if(strcmp(service->hosts[i].host_id, host->host_id) == 0)
+		if(strcmp(service->hosts[i].host_id, host->host_id) == 0 && strcmp(service->hosts[i].host_addr, host->host_addr) == 0) // duplicate when tcp forward
 		{
 			index = i;
 			break;

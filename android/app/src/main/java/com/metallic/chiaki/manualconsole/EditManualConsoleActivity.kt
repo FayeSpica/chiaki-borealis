@@ -82,7 +82,7 @@ class EditManualConsoleActivity: AppCompatActivity(), RevealActivity
 		if(registeredHost == null)
 			getString(R.string.add_manual_regist_on_connect)
 		else
-			"${registeredHost.serverNickname ?: ""} (${registeredHost.serverMac})"
+			"${registeredHost.serverNickname ?: ""} (${registeredHost.serverMac}) PSN AccountId(${registeredHost.psnAccountId})"
 
 	private fun saveHost()
 	{

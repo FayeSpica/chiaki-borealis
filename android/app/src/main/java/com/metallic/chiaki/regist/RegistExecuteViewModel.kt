@@ -43,12 +43,15 @@ class RegistExecuteViewModel(val database: AppDatabase): ViewModel()
 
 	private var assignManualHostId: Long? = null
 
+	private var psnAccountId: String? = null
+
 	fun start(info: RegistInfo, assignManualHostId: Long?)
 	{
 		if(regist != null)
 			return
 		try
 		{
+			this.psnAccountId = info.psnAccountIdString
 			regist = Regist(info, log.log, this::registEvent)
 			this.assignManualHostId = assignManualHostId
 			_state.value = State.RUNNING
@@ -78,7 +81,7 @@ class RegistExecuteViewModel(val database: AppDatabase): ViewModel()
 	private fun registSuccess(host: RegistHost)
 	{
 		this.host = host
-		database.registeredHostDao().getByMac(MacAddress(host.serverMac))
+		database.registeredHostDao().getByMacAndPsnAccountId(MacAddress(host.serverMac), this.psnAccountId ?: "")
 			.subscribeOn(Schedulers.io())
 			.observeOn(AndroidSchedulers.mainThread())
 			.doOnSuccess {
@@ -97,8 +100,8 @@ class RegistExecuteViewModel(val database: AppDatabase): ViewModel()
 		val assignManualHostId = assignManualHostId
 		val dao = database.registeredHostDao()
 		val manualHostDao = database.manualHostDao()
-		val registeredHost = RegisteredHost(host)
-		dao.deleteByMac(registeredHost.serverMac)
+		val registeredHost = RegisteredHost(host, this.psnAccountId ?: "")
+		dao.deleteByMacAndPsnAccountId(registeredHost.serverMac, registeredHost.psnAccountId ?: "")
 			.andThen(dao.insert(registeredHost))
 			.let {
 				if(assignManualHostId != null)

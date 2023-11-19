@@ -18,6 +18,7 @@
     <string name="display_host_host">Address: %s</string>
     <string name="display_host_id_unregistered">ID: %s</string>
     <string name="display_host_id_registered">ID: %s (registered)</string>
+    <string name="display_psn_account_id">PSN AccountId: %s</string>
     <string name="display_host_app_title_id">App: %s\nTitle ID: %s</string>
     <string name="action_register">Register Console</string>
     <string name="action_add_manual">Add Console Manually</string>

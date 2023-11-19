@@ -84,12 +84,25 @@
             android:maxLines="1"
             android:ellipsize="end"/>
 
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/psnAccountIdTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed-medium"
+            app:layout_constraintTop_toBottomOf="@id/idTextView"
+            tools:text="PSN AccountId: llsxxqqa="
+            android:textSize="16sp"
+            android:gravity="center"
+            android:textColor="?attr/colorOnSurface"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
         <ImageView
             android:id="@+id/stateIndicatorImageView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:src="@drawable/ic_console_ps5"
-            app:layout_constraintTop_toBottomOf="@id/idTextView"
+            app:layout_constraintTop_toBottomOf="@id/psnAccountIdTextView"
             app:layout_constraintBottom_toTopOf="@id/bottomInfoTextView"
             android:layout_marginLeft="32dp"
             android:layout_marginRight="32dp"

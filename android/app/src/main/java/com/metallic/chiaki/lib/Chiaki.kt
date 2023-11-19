@@ -469,6 +469,7 @@ data class RegistInfo(
 	val broadcast: Boolean,
 	val psnOnlineId: String?,
 	val psnAccountId: ByteArray?,
+	val psnAccountIdString: String?,
 	val pin: Int
 ): Parcelable
 {

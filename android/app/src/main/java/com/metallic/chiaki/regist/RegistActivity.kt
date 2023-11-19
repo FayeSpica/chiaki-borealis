@@ -129,7 +129,7 @@ class RegistActivity: AppCompatActivity(), RevealActivity
 			RegistViewModel.ConsoleVersion.PS4_LT_7 -> Target.PS4_8
 		}
 
-		val registInfo = RegistInfo(target, host, broadcast, psnOnlineId, psnAccountId, pin.toInt())
+		val registInfo = RegistInfo(target, host, broadcast, psnOnlineId, psnAccountId, psnId, pin.toInt())
 
 		Intent(this, RegistExecuteActivity::class.java).also {
 			it.putExtra(RegistExecuteActivity.EXTRA_REGIST_INFO, registInfo)

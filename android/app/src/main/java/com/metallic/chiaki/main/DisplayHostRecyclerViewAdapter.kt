@@ -68,6 +68,8 @@ class DisplayHostRecyclerViewAdapter(
 						id)
 				else
 					""
+			val psnAccountId = host.psnAccountId
+			it.psnAccountIdTextView.text = context.getString(R.string.display_psn_account_id, psnAccountId)
 			it.bottomInfoTextView.text = (host as? DiscoveredDisplayHost)?.discoveredHost?.let { discoveredHost ->
 				if(discoveredHost.runningAppName != null || discoveredHost.runningAppTitleid != null)
 					context.getString(R.string.display_host_app_title_id, discoveredHost.runningAppName ?: "", discoveredHost.runningAppTitleid ?: "")
