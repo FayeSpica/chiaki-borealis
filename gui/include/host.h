@@ -50,6 +50,8 @@ class RegisteredHost
 		uint8_t rp_key[0x10];
 
 	public:
+		QString psn_account_id;
+		QString host_id;
 		RegisteredHost();
 		RegisteredHost(const RegisteredHost &o);
 
@@ -60,6 +62,8 @@ class RegisteredHost
 		const QString &GetServerNickname() const	{ return server_nickname; }
 		const QByteArray GetRPRegistKey() const	{ return QByteArray(rp_regist_key, sizeof(rp_regist_key)); }
 		const QByteArray GetRPKey() const		{ return QByteArray((const char *)rp_key, sizeof(rp_key)); }
+        const QString &GetPsnAccountId() const	{ return psn_account_id; }
+		const QString &GetHostId() const	    { return host_id; }
 
 		void SaveToSettings(QSettings *settings) const;
 		static RegisteredHost LoadFromSettings(QSettings *settings);
@@ -71,19 +75,19 @@ class ManualHost
 		int id;
 		QString host;
 		bool registered;
-		HostMAC registered_mac;
 
 	public:
+	    QString host_id;
 		ManualHost();
-		ManualHost(int id, const QString &host, bool registered, const HostMAC &registered_mac);
+		ManualHost(int id, const QString &host, bool registered, const QString &host_id);
 		ManualHost(int id, const ManualHost &o);
 
 		int GetID() const 			{ return id; }
 		QString GetHost() const 	{ return host; }
 		bool GetRegistered() const	{ return registered; }
-		HostMAC GetMAC() const 		{ return registered_mac; }
+		QString GetHostId() const      { return host_id; }
 
-		void Register(const RegisteredHost &registered_host) { this->registered = true; this->registered_mac = registered_host.GetServerMAC(); }
+		void Register(const RegisteredHost &registered_host) { this->registered = true; this->host_id = registered_host.GetHostId(); }
 
 		void SaveToSettings(QSettings *settings) const;
 		static ManualHost LoadFromSettings(QSettings *settings);

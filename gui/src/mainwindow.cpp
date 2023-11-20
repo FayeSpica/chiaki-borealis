@@ -325,9 +325,10 @@ void MainWindow::UpdateDisplayServers()
 		server.discovered = true;
 		server.discovery_host = host;
 
-		server.registered = settings->GetRegisteredHostRegistered(host.GetHostMAC());
-		if(server.registered)
-			server.registered_host = settings->GetRegisteredHost(host.GetHostMAC());
+		server.registered = false;
+		// server.registered = settings->GetRegisteredHostRegistered(host.GetHostMAC());
+		// if(server.registered)
+		//	server.registered_host = settings->GetRegisteredHost(host.GetHostMAC());
 
 		display_servers.append(server);
 	}
@@ -339,10 +340,10 @@ void MainWindow::UpdateDisplayServers()
 		server.manual_host = host;
 
 		server.registered = false;
-		if(host.GetRegistered() && settings->GetRegisteredHostRegistered(host.GetMAC()))
+		if(host.GetRegistered() && settings->GetRegisteredHostRegistered(host.GetHostId()))
 		{
 			server.registered = true;
-			server.registered_host = settings->GetRegisteredHost(host.GetMAC());
+			server.registered_host = settings->GetRegisteredHost(host.GetHostId());
 		}
 
 		display_servers.append(server);

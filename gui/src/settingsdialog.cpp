@@ -378,11 +378,12 @@ void SettingsDialog::UpdateRegisteredHosts()
 	auto hosts = settings->GetRegisteredHosts();
 	for(const auto &host : hosts)
 	{
-		auto item = new QListWidgetItem(QString("%1 (%2, %3)")
+		auto item = new QListWidgetItem(QString("%1 (%2, %3) (%4)")
 				.arg(host.GetServerMAC().ToString(),
 					chiaki_target_is_ps5(host.GetTarget()) ? "PS5" : "PS4",
-					host.GetServerNickname()));
-		item->setData(Qt::UserRole, QVariant::fromValue(host.GetServerMAC()));
+					host.GetServerNickname(),
+					host.GetPsnAccountId()));
+		item->setData(Qt::UserRole, QVariant::fromValue(host.GetServerMAC().ToString()+host.GetPsnAccountId()));
 		registered_hosts_list_widget->addItem(item);
 	}
 }
@@ -403,12 +404,12 @@ void SettingsDialog::DeleteRegisteredHost()
 	auto item = registered_hosts_list_widget->currentItem();
 	if(!item)
 		return;
-	auto mac = item->data(Qt::UserRole).value<HostMAC>();
+	auto key = item->data(Qt::UserRole).value<QString>();
 
 	int r = QMessageBox::question(this, tr("Delete registered Console"),
-			tr("Are you sure you want to delete the registered console with ID %1?").arg(mac.ToString()));
+			tr("Are you sure you want to delete the registered console with ID %1?").arg(key));
 	if(r != QMessageBox::Yes)
 		return;
 
-	settings->RemoveRegisteredHost(mac);
+	settings->RemoveRegisteredHost(key);
 }

@@ -18,7 +18,9 @@ RegisteredHost::RegisteredHost(const RegisteredHost &o)
 	ap_name(o.ap_name),
 	server_mac(o.server_mac),
 	server_nickname(o.server_nickname),
-	rp_key_type(o.rp_key_type)
+	rp_key_type(o.rp_key_type),
+	psn_account_id(o.psn_account_id),
+	host_id(o.host_id)
 {
 	memcpy(rp_regist_key, o.rp_regist_key, sizeof(rp_regist_key));
 	memcpy(rp_key, o.rp_key, sizeof(rp_key));
@@ -50,6 +52,8 @@ void RegisteredHost::SaveToSettings(QSettings *settings) const
 	settings->setValue("rp_regist_key", QByteArray(rp_regist_key, sizeof(rp_regist_key)));
 	settings->setValue("rp_key_type", rp_key_type);
 	settings->setValue("rp_key", QByteArray((const char *)rp_key, sizeof(rp_key)));
+	settings->setValue("psn_account_id", psn_account_id);
+	settings->setValue("host_id", host_id);
 }
 
 RegisteredHost RegisteredHost::LoadFromSettings(QSettings *settings)
@@ -71,6 +75,8 @@ RegisteredHost RegisteredHost::LoadFromSettings(QSettings *settings)
 	auto rp_key = settings->value("rp_key").toByteArray();
 	if(rp_key.size() == sizeof(r.rp_key))
 		memcpy(r.rp_key, rp_key.constData(), sizeof(r.rp_key));
+	r.psn_account_id = settings->value("psn_account_id").toString();
+	r.host_id = settings->value("host_id").toString();
 	return r;
 }
 
@@ -80,11 +86,11 @@ ManualHost::ManualHost()
 	registered = false;
 }
 
-ManualHost::ManualHost(int id, const QString &host, bool registered, const HostMAC &registered_mac)
+ManualHost::ManualHost(int id, const QString &host, bool registered, const QString &host_id)
 	: id(id),
 	host(host),
 	registered(registered),
-	registered_mac(registered_mac)
+	host_id(host_id)
 {
 }
 
@@ -92,7 +98,7 @@ ManualHost::ManualHost(int id, const ManualHost &o)
 	: id(id),
 	host(o.host),
 	registered(o.registered),
-	registered_mac(o.registered_mac)
+	host_id(o.host_id)
 {
 }
 
@@ -101,7 +107,7 @@ void ManualHost::SaveToSettings(QSettings *settings) const
 	settings->setValue("id", id);
 	settings->setValue("host", host);
 	settings->setValue("registered", registered);
-	settings->setValue("registered_mac", QByteArray((const char *)registered_mac.GetMAC(), 6));
+	settings->setValue("host_id", host_id);
 }
 
 ManualHost ManualHost::LoadFromSettings(QSettings *settings)
@@ -110,8 +116,6 @@ ManualHost ManualHost::LoadFromSettings(QSettings *settings)
 	r.id = settings->value("id", -1).toInt();
 	r.host = settings->value("host").toString();
 	r.registered = settings->value("registered").toBool();
-	auto registered_mac = settings->value("registered_mac").toByteArray();
-	if(registered_mac.size() == 6)
-		r.registered_mac = HostMAC((const uint8_t *)registered_mac.constData());
+	r.host_id = settings->value("host_id").toString();
 	return r;
 }

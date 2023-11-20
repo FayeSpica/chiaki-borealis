@@ -38,7 +38,7 @@ ManualHostDialog::ManualHostDialog(Settings *settings, int id, QWidget *parent)
 	registered_host_combo_box->addItem(tr("Register on first Connection"));
 	auto registered_hosts = settings->GetRegisteredHosts();
 	for(const auto &registered_host : registered_hosts)
-		registered_host_combo_box->addItem(QString("%1 (%2)").arg(registered_host.GetServerMAC().ToString(), registered_host.GetServerNickname()), QVariant::fromValue(registered_host.GetServerMAC()));
+		registered_host_combo_box->addItem(QString("%1 (%2) (%3)").arg(registered_host.GetServerMAC().ToString(), registered_host.GetServerNickname(), registered_host.GetPsnAccountId()), QVariant::fromValue(registered_host.GetHostId()));
 	form_layout->addRow(tr("Registered Console:"), registered_host_combo_box);
 
 	button_box = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Discard, this);
@@ -63,15 +63,15 @@ void ManualHostDialog::ButtonClicked(QAbstractButton *button)
 void ManualHostDialog::accept()
 {
 	bool registered = false;
-	HostMAC registered_mac;
+	QString uni_host_id;
 	QVariant registered_host_data = registered_host_combo_box->currentData();
 	if(registered_host_data.isValid())
 	{
 		registered = true;
-		registered_mac = registered_host_data.value<HostMAC>();
+		uni_host_id = registered_host_data.value<QString>();
 	}
 
-	ManualHost host(host_id, host_edit->text().trimmed(), registered, registered_mac);
+	ManualHost host(host_id, host_edit->text().trimmed(), registered, uni_host_id);
 	settings->SetManualHost(host);
 	QDialog::accept();
 }

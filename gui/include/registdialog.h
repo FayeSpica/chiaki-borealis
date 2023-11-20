@@ -38,6 +38,8 @@ class RegistDialog : public QDialog
 
 		RegisteredHost registered_host;
 
+		QString psn_account_id;
+
 		bool NeedAccountId();
 
 	private slots:
@@ -70,6 +72,8 @@ class RegistExecuteDialog: public QDialog
 
 		RegisteredHost registered_host;
 
+		QString psn_account_id;
+
 		void Finished();
 
 	private slots:
@@ -78,7 +82,7 @@ class RegistExecuteDialog: public QDialog
 		void Failed();
 
 	public:
-		explicit RegistExecuteDialog(Settings *settings, const ChiakiRegistInfo &regist_info, QWidget *parent = nullptr);
+		explicit RegistExecuteDialog(Settings *settings, const ChiakiRegistInfo &regist_info, QString psn_account_id, QWidget *parent = nullptr);
 		~RegistExecuteDialog();
 
 		RegisteredHost GetRegisteredHost()	{ return registered_host; }

@@ -43,7 +43,7 @@ class Settings : public QObject
 	private:
 		QSettings settings;
 
-		QMap<HostMAC, RegisteredHost> registered_hosts;
+		QMap<QString, RegisteredHost> registered_hosts;
 		QMap<int, ManualHost> manual_hosts;
 		int manual_hosts_id_next;
 
@@ -110,9 +110,9 @@ class Settings : public QObject
 
 		QList<RegisteredHost> GetRegisteredHosts() const			{ return registered_hosts.values(); }
 		void AddRegisteredHost(const RegisteredHost &host);
-		void RemoveRegisteredHost(const HostMAC &mac);
-		bool GetRegisteredHostRegistered(const HostMAC &mac) const	{ return registered_hosts.contains(mac); }
-		RegisteredHost GetRegisteredHost(const HostMAC &mac) const	{ return registered_hosts[mac]; }
+		void RemoveRegisteredHost(QString host_id);
+		bool GetRegisteredHostRegistered(QString host_id) const	{ return registered_hosts.contains(host_id); }
+		RegisteredHost GetRegisteredHost(QString host_id) const	{ return registered_hosts[host_id]; }
 
 		QList<ManualHost> GetManualHosts() const 					{ return manual_hosts.values(); }
 		int SetManualHost(const ManualHost &host);

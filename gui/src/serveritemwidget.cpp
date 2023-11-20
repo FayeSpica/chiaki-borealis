@@ -91,6 +91,8 @@ void ServerItemWidget::Update(const DisplayServer &display_server)
 
 	top_text += "\n" + (display_server.discovered ? tr("discovered") : tr("manual")),
 
+	top_text += "\n" + tr("PSN AccountId: %1").arg(display_server.registered ? display_server.registered_host.GetPsnAccountId() : tr("")),
+
 	top_label->setText(top_text);
 
 	QString bottom_text = "";

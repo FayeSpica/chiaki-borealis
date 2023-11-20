@@ -255,7 +255,7 @@ void Settings::LoadRegisteredHosts()
 	{
 		settings.setArrayIndex(i);
 		RegisteredHost host = RegisteredHost::LoadFromSettings(&settings);
-		registered_hosts[host.GetServerMAC()] = host;
+		registered_hosts[host.GetServerMAC().ToString()+host.GetPsnAccountId()] = host;
 	}
 	settings.endArray();
 }
@@ -275,16 +275,16 @@ void Settings::SaveRegisteredHosts()
 
 void Settings::AddRegisteredHost(const RegisteredHost &host)
 {
-	registered_hosts[host.GetServerMAC()] = host;
+	registered_hosts[host.host_id] = host;
 	SaveRegisteredHosts();
 	emit RegisteredHostsUpdated();
 }
 
-void Settings::RemoveRegisteredHost(const HostMAC &mac)
+void Settings::RemoveRegisteredHost(QString host_id)
 {
-	if(!registered_hosts.contains(mac))
+	if(!registered_hosts.contains(host_id))
 		return;
-	registered_hosts.remove(mac);
+	registered_hosts.remove(host_id);
 	SaveRegisteredHosts();
 	emit RegisteredHostsUpdated();
 }

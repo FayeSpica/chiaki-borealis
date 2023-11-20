@@ -19,6 +19,7 @@ class ManualHostDialog: public QDialog
 	private:
 		Settings *settings;
 		int host_id;
+		QString psn_account_id;
 
 		QLineEdit *host_edit;
 		QComboBox *registered_host_combo_box;

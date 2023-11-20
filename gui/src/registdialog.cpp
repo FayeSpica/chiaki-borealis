@@ -133,6 +133,7 @@ void RegistDialog::accept()
 	else
 	{
 		QString account_id_b64 = psn_account_id_edit->text().trimmed();
+		this->psn_account_id = account_id_b64;
 		QByteArray account_id = QByteArray::fromBase64(account_id_b64.toUtf8());
 		if(account_id.size() != CHIAKI_PSN_ACCOUNT_ID_SIZE)
 		{
@@ -146,7 +147,7 @@ void RegistDialog::accept()
 	info.broadcast = broadcast_check_box->isChecked();
 	info.pin = (uint32_t)pin_edit->text().toULong();
 
-	RegistExecuteDialog execute_dialog(settings, info, this);
+	RegistExecuteDialog execute_dialog(settings, info, this->psn_account_id, this);
 	int r = execute_dialog.exec();
 	if(r == QDialog::Accepted)
 	{
@@ -158,10 +159,11 @@ void RegistDialog::accept()
 static void RegistExecuteDialogLogCb(ChiakiLogLevel level, const char *msg, void *user);
 static void RegistExecuteDialogRegistCb(ChiakiRegistEvent *event, void *user);
 
-RegistExecuteDialog::RegistExecuteDialog(Settings *settings, const ChiakiRegistInfo &regist_info, QWidget *parent)
+RegistExecuteDialog::RegistExecuteDialog(Settings *settings, const ChiakiRegistInfo &regist_info, QString psn_account_id, QWidget *parent)
 	: QDialog(parent)
 {
 	this->settings = settings;
+	this->psn_account_id = psn_account_id;
 
 	auto layout = new QVBoxLayout(this);
 	setLayout(layout);
@@ -206,9 +208,11 @@ void RegistExecuteDialog::Finished()
 void RegistExecuteDialog::Success(RegisteredHost host)
 {
 	CHIAKI_LOGI(&log, "Successfully registered %s", host.GetServerNickname().toLocal8Bit().constData());
+	host.psn_account_id = this->psn_account_id;
+	host.host_id = host.GetServerMAC().ToString() + this->psn_account_id;
 	this->registered_host = host;
 
-	if(settings->GetRegisteredHostRegistered(host.GetServerMAC()))
+	if(settings->GetRegisteredHostRegistered(host.GetHostId()))
 	{
 		int r = QMessageBox::question(this,
 				tr("Console already registered"),
@@ -222,7 +226,7 @@ void RegistExecuteDialog::Success(RegisteredHost host)
 
 	settings->AddRegisteredHost(host);
 
-	QMessageBox::information(this, tr("Console registered"), tr("The Console %1 with ID %2 has been successfully registered!").arg(host.GetServerNickname(), host.GetServerMAC().ToString()));
+	QMessageBox::information(this, tr("Console registered"), tr("The Console %1 with ID %2 And Account %3 has been successfully registered!").arg(host.GetServerNickname(), host.GetServerMAC().ToString(), this->psn_account_id));
 
 	accept();
 }
