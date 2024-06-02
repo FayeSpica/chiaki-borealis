@@ -607,13 +607,12 @@ static ChiakiErrorCode session_thread_request_session(ChiakiSession *session, Ch
 			memcpy(session->connect_info.hostname, "unknown", 8);
 		}
 
-		CHIAKI_LOGI(session->log, "Trying to request session from %s:%d", session->connect_info.hostname, SESSION_PORT);
-
+        CHIAKI_LOGI(session->log, "Trying to request session from %s:%d, sa_family: %d", session->connect_info.hostname, SESSION_PORT, sa->sa_family);
 		session_sock = socket(ai->ai_family, SOCK_STREAM, 0);
 		if(CHIAKI_SOCKET_IS_INVALID(session_sock))
 		{
 #ifdef _WIN32
-			CHIAKI_LOGE(session->log, "Failed to create socket to request session");
+            CHIAKI_LOGE(session->log, "Failed to create socket to request session, Error at socket(): %ld", WSAGetLastError());
 #else
 			CHIAKI_LOGE(session->log, "Failed to create socket to request session: %s", strerror(errno));
 #endif

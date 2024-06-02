@@ -5,18 +5,18 @@ project(chiaki)
 
 # Like option(), but the value can also be AUTO
 macro(tri_option name desc default)
-    set("${name}" "${default}" CACHE STRING "${desc}")
-    set_property(CACHE "${name}" PROPERTY STRINGS AUTO ON OFF)
+	set("${name}" "${default}" CACHE STRING "${desc}")
+	set_property(CACHE "${name}" PROPERTY STRINGS AUTO ON OFF)
 endmacro()
 
 option(CHIAKI_ENABLE_TESTS "Enable tests for Chiaki" ON)
 option(CHIAKI_ENABLE_CLI "Enable CLI for Chiaki" OFF)
 option(CHIAKI_ENABLE_GUI "Enable Qt GUI" ON)
 option(CHIAKI_ENABLE_ANDROID "Enable Android (Use only as part of the Gradle Project)" OFF)
-option(CHIAKI_ENABLE_BOREALIS "Enable Borealis GUI (For Nintendo Switch or PC)" OFF)
+option(CHIAKI_ENABLE_GUI2 "Enable Borealis GUI (For Nintendo Switch or PC)" OFF)
 tri_option(CHIAKI_ENABLE_SETSU "Enable libsetsu for touchpad input from controller" AUTO)
 option(CHIAKI_LIB_ENABLE_OPUS "Use Opus as part of Chiaki Lib" ON)
-if(CHIAKI_ENABLE_GUI OR CHIAKI_ENABLE_BOREALIS)
+if(CHIAKI_ENABLE_GUI OR CHIAKI_ENABLE_GUI2)
 	set(CHIAKI_FFMPEG_DEFAULT ON)
 else()
 	set(CHIAKI_FFMPEG_DEFAULT AUTO)
@@ -97,10 +97,10 @@ if(CHIAKI_LIB_ENABLE_MBEDTLS)
 		set(ENABLE_PROGRAMS CACHE INTERNAL OFF)
 		set(USE_SHARED_MBEDTLS_LIBRARY CACHE INTERNAL OFF)
 		FetchContent_Declare(
-			mbedtls
-			GIT_REPOSITORY https://github.com/Mbed-TLS/mbedtls.git
-			GIT_TAG 8b3f26a5ac38d4fdccbc5c5366229f3e01dafcc0 # v2.28.0
-			GIT_PROGRESS TRUE
+				mbedtls
+				GIT_REPOSITORY https://github.com/Mbed-TLS/mbedtls.git
+				GIT_TAG 8b3f26a5ac38d4fdccbc5c5366229f3e01dafcc0 # v2.28.0
+				GIT_PROGRESS TRUE
 		)
 		FetchContent_MakeAvailable(mbedtls)
 	endif()
@@ -125,20 +125,6 @@ else()
 endif()
 
 if(CHIAKI_ENABLE_PI_DECODER)
-	find_package(ILClient)
-	if(ILClient_FOUND)
-		set(CHIAKI_ENABLE_PI_DECODER ON)
-	else()
-		if(NOT CHIAKI_ENABLE_PI_DECODER STREQUAL AUTO)
-			message(FATAL_ERROR "
-CHIAKI_ENABLE_PI_DECODER is set to ON, but its dependencies (ilclient source and libs) could not be resolved.
-The Raspberry Pi Decoder is only supported on Raspberry Pi OS and requires libraspberrypi0 and libraspberrypi-doc.")
-		endif()
-		set(CHIAKI_ENABLE_PI_DECODER OFF)
-	endif()
-endif()
-
-if(CHIAKI_ENABLE_PI_DECODER)
 	message(STATUS "Pi Decoder enabled")
 else()
 	message(STATUS "Pi Decoder disabled")
@@ -151,7 +137,7 @@ if(CHIAKI_ENABLE_CLI)
 endif()
 
 if(CHIAKI_ENABLE_GUI AND CHIAKI_GUI_ENABLE_SDL_GAMECONTROLLER)
-	find_package(SDL2 MODULE REQUIRED)
+	# find_package(SDL2 MODULE REQUIRED)
 endif()
 
 if(CHIAKI_ENABLE_SETSU)
@@ -196,6 +182,6 @@ if(CHIAKI_ENABLE_ANDROID)
 	add_subdirectory(android/app)
 endif()
 
-if(CHIAKI_ENABLE_BOREALIS)
-	add_subdirectory(switch)
+if(CHIAKI_ENABLE_GUI2)
+	add_subdirectory(gui2)
 endif()
