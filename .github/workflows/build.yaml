@@ -1,0 +1,23 @@
+name: Build chiaki-borealis
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  msys2-w64:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          update: true
+          install: git mingw-w64-x86_64-toolchain make ninja yasm pkg-config diffutils mingw-w64-x86_64-glm mingw-w64-x86_64-glfw mingw-w64-x86_64-libiconv
+      - name: CI-Build
+        run: |
+          echo 'Running in MSYS2!'
+          ./scripts/github-msys2-build.sh
