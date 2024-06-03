@@ -116,6 +116,20 @@
             ]
         },
         {
+            "name": "sdl2",
+            "buildsystem": "cmake",
+            "config-opts": [
+                "-DCMAKE_INSTALL_PREFIX=/app"
+            ],
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://github.com/libsdl-org/SDL.git",
+                    "branch": "release-2.0.16"
+                }
+            ]
+        },
+        {
             "name": "chiaki-borealis",
             "buildsystem": "cmake",
             "config-opts": [
