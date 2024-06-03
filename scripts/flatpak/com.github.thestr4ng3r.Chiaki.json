@@ -3,7 +3,7 @@
     "runtime": "org.kde.Platform",
     "runtime-version": "5.15",
     "sdk": "org.kde.Sdk",
-    "command": "chiaki-borealis",
+    "command": "chiaki",
     "separate-locales": false,
     "finish-args": [
         "--share=network",
