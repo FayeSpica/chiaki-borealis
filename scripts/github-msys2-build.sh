@@ -6,6 +6,7 @@ export CC=gcc
 export CXX=g++
 
 export BUILD_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+export CMAKE_BUILD_ROOT="$(echo $BUILD_ROOT | sed 's|^/\([a-z]\)|\1:|g')"
 
 # build ffmpeg
 scripts/build-ffmpeg.sh .
@@ -17,7 +18,7 @@ mkdir build && cd build
 cmake \
 	-G Ninja \
 	-DCMAKE_BUILD_TYPE=Release \
-	-DCMAKE_INSTALL_PREFIX="$BUILD_ROOT/opus-prefix" \
+	-DCMAKE_INSTALL_PREFIX="$CMAKE_BUILD_ROOT/opus-prefix" \
 	..
 ninja
 ninja install
@@ -28,29 +29,28 @@ wget https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-1.1.1s.zip && 7z
 
 wget https://www.libsdl.org/release/SDL2-devel-2.26.2-VC.zip && 7z x SDL2-devel-2.26.2-VC.zip
 
-export SDL_ROOT="$BUILD_ROOT/SDL2-2.26.2"
+export CMAKE_SDL_ROOT="$CMAKE_BUILD_ROOT/SDL2-2.26.2"
 
-echo "set(SDL2_INCLUDE_DIRS \"$SDL_ROOT/include\")
-set(SDL2_LIBRARIES \"$SDL_ROOT/lib/x64/SDL2.lib\")
-set(SDL2_LIBDIR \"$SDL_ROOT/lib/x64\")
-include($SDL_ROOT/cmake/sdl2-config-version.cmake)" > "$SDL_ROOT/SDL2Config.cmake"
+echo "set(SDL2_INCLUDE_DIRS \"$CMAKE_SDL_ROOT/include\")
+set(SDL2_LIBRARIES \"$CMAKE_SDL_ROOT/lib/x64/SDL2.lib\")
+set(SDL2_LIBDIR \"$CMAKE_SDL_ROOT/lib/x64\")
+include($CMAKE_SDL_ROOT/cmake/sdl2-config-version.cmake)" > "$CMAKE_SDL_ROOT/SDL2Config.cmake"
 
 
 mkdir protoc && cd protoc
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.1/protoc-3.9.1-win64.zip &&
 7z x protoc-3.9.1-win64.zip
 
-cd $BUILD_ROOT
-
 export PATH="$PWD/protoc/bin:$PATH"
 
 PYTHON="python"
 pip install protobuf==3.19.5
 
-COPY_DLLS="$BUILD_ROOT/openssl-1.1/x64/bin/libcrypto-1_1-x64.dll $BUILD_ROOT/openssl-1.1/x64/bin/libssl-1_1-x64.dll $SDL_ROOT/lib/x64/SDL2.dll"
+COPY_DLLS="$BUILD_ROOT/openssl-1.1/x64/bin/libcrypto-1_1-x64.dll $BUILD_ROOT/openssl-1.1/x64/bin/libssl-1_1-x64.dll $CMAKE_SDL_ROOT/lib/x64/SDL2.dll"
 
 echo "-- Configure"
 
+cd $BUILD_ROOT
 rm -rf build
 mkdir build && cd build
 
@@ -58,7 +58,7 @@ cmake \
     -G Ninja \
 	-DCMAKE_C_COMPILER=gcc \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
-	-DCMAKE_PREFIX_PATH="$BUILD_ROOT/ffmpeg-prefix;$BUILD_ROOT/opus-prefix;$BUILD_ROOT/openssl-1.1/x64" \
+	-DCMAKE_PREFIX_PATH="$CMAKE_BUILD_ROOT/ffmpeg-prefix;$CMAKE_BUILD_ROOT/opus-prefix;$CMAKE_BUILD_ROOT/openssl-1.1/x64" \
 	-DPYTHON_EXECUTABLE="$PYTHON" \
 	-DCHIAKI_ENABLE_TESTS=OFF \
 	-DCHIAKI_ENABLE_PI_DECODER=OFF \
