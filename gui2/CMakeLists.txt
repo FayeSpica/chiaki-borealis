@@ -77,8 +77,7 @@ target_compile_definitions(borealis PUBLIC BOREALIS_RESOURCES="./gui2/res/")
 ##################
 
 find_package(FFMPEG REQUIRED COMPONENTS avcodec avutil swscale)
-find_package(SDL2 MODULE REQUIRED)
-find_library(SDL2 SDL2)
+find_package(SDL2 REQUIRED)
 # find_library(SWRESAMPLE swresample)
 
 # find -type f | grep -P '\.(h|cpp)$' | sed 's#\./#\t\t#g'
@@ -103,7 +102,8 @@ target_link_libraries(chiaki-borealis
 	chiaki-lib
 	borealis
 	iconv
-	${SDL2}
+	SDL2::SDL2
+	SDL2::SDL2main
 	FFMPEG::avcodec
 	FFMPEG::avutil
 	FFMPEG::swscale
