@@ -119,5 +119,5 @@ target_link_libraries(chiaki-borealis
 # install
 install(TARGETS chiaki-borealis DESTINATION bin)
 
-install(TARGETS ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION bin)
-install(TARGETS ${CMAKE_CURRENT_SOURCE_DIR}/chiaki.conf DESTINATION bin)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION bin)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/chiaki.conf DESTINATION bin)
