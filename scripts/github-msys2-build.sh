@@ -81,6 +81,15 @@ echo "-- Deploy"
 
 mkdir ChiakiBorealis && cp build/gui2/chiaki.exe ChiakiBorealis
 
+# copy dlls
 cp -v $COPY_DLLS ChiakiBorealis
+cp -v /mingw64/bin/libiconv-2.dll ChiakiBorealis
+cp -v /mingw64/bin/libwinpthread-1.dll ChiakiBorealis
+cp -v /mingw64/bin/libgcc_s_seh-1.dll ChiakiBorealis
+cp -v /mingw64/bin/libstdc++-6.dll ChiakiBorealis
+cp -v /mingw64/bin/glfw3.dll ChiakiBorealis
+
+# copy resources
+cp -vr gui2/res ChiakiBorealis
 
 ls -alh ChiakiBorealis
