@@ -104,6 +104,10 @@
         {
             "name": "glm",
             "buildsystem": "cmake",
+            "build-commands": [
+                "mkdir -p /app/include/glm",
+                "cp -r glm/glm /app/include/glm"
+            ],
             "config-opts": [
                 "-DCMAKE_INSTALL_PREFIX=/app"
             ],
