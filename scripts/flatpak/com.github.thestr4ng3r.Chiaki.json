@@ -148,6 +148,12 @@
                     "url": "https://github.com/FayeSpica/chiaki-borealis.git",
                     "branch": "master"
                 }
+            ],
+            "post-install": [
+                "ls -alh /app",
+                "ls -alh /app/bin",
+                "pwd",
+                "ls -alh ."
             ]
         }
     ]
