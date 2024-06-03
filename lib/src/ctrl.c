@@ -911,7 +911,7 @@ static ChiakiErrorCode ctrl_connect(ChiakiCtrl *ctrl)
 		if(err != CHIAKI_ERR_CANCELED)
 		{
 #ifdef _WIN32
-			int errsv = WSAGetLastError;
+			int errsv = WSAGetLastError();
 #else
 			int errsv = errno;
 #endif
