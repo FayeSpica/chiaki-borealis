@@ -2,6 +2,8 @@
 
 set -xe
 
+git submodule update --init --recursive
+
 export CC=gcc
 export CXX=g++
 
