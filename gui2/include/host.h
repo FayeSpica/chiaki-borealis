@@ -67,7 +67,7 @@ class Host
 		std::string host_name;
 		// sony's host_id == mac addr without colon
 		std::string host_id;
-		std::string host_addr = "192.168.31.184";
+		std::string host_addr = "";
 		std::string ap_ssid;
 		std::string ap_bssid;
 		std::string ap_key;

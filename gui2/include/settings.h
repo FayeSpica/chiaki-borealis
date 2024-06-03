@@ -26,8 +26,8 @@ class Settings
 		// global_settings from psedo INI file
 		ChiakiVideoResolutionPreset global_video_resolution = CHIAKI_VIDEO_RESOLUTION_PRESET_720p;
 		ChiakiVideoFPSPreset global_video_fps = CHIAKI_VIDEO_FPS_PRESET_60;
-		std::string global_psn_online_id = "FayeSpicaL";
-		std::string global_psn_account_id = "llZpZkrrMiA=";
+		std::string global_psn_online_id = "";
+		std::string global_psn_account_id = "";
 
 		typedef enum configurationitem
 		{
