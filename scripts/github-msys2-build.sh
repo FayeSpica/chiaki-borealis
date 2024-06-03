@@ -90,6 +90,7 @@ cp -v /mingw64/bin/libstdc++-6.dll ChiakiBorealis
 cp -v /mingw64/bin/glfw3.dll ChiakiBorealis
 
 # copy resources
-cp -vr gui2/res ChiakiBorealis
+mkdir ChiakiBorealis/gui2
+cp -vr gui2/res ChiakiBorealis/gui2
 
 ls -alh ChiakiBorealis
