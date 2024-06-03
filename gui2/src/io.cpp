@@ -554,46 +554,26 @@ bool IO::ReadGameKeys(SDL_Event *event, ChiakiControllerState *state)
                         state->r2_state = 0;
                     }
                     break;
+                case SDL_CONTROLLER_AXIS_LEFTX:
+                    // Left-right movement
+                    state->left_x = event->caxis.value;
+                    break;
+                case SDL_CONTROLLER_AXIS_LEFTY:
+                    // Left-right movement
+                    state->left_y = event->caxis.value;
+                    break;
+                case SDL_CONTROLLER_AXIS_RIGHTX:
+                    // Left-right movement
+                    state->right_x = event->caxis.value;
+                    break;
+                case SDL_CONTROLLER_AXIS_RIGHTY:
+                    // Left-right movement
+                    state->right_y = event->caxis.value;
+                    break;
                 default:
                     ret = false;
             }
             break;
-		case SDL_JOYAXISMOTION:
-			// printf("SDL_JOYAXISMOTION jaxis %d axis %d value %d\n",
-			// event->jaxis.which, event->jaxis.axis, event->jaxis.value);
-			if(event->jaxis.which == 0)
-			{
-				// left joystick
-				if(event->jaxis.axis == 0)
-					// Left-right movement
-					state->left_x = event->jaxis.value;
-				else if(event->jaxis.axis == 1)
-					// Up-Down movement
-					state->left_y = event->jaxis.value;
-				else if(event->jaxis.axis == 2)
-					// Left-right movement
-					state->right_x = event->jaxis.value;
-				else if(event->jaxis.axis == 3)
-					// Up-Down movement
-					state->right_y = event->jaxis.value;
-				else
-					ret = false;
-			}
-			else if(event->jaxis.which == 1)
-			{
-				// right joystick
-				if(event->jaxis.axis == 0)
-					// Left-right movement
-					state->right_x = event->jaxis.value;
-				else if(event->jaxis.axis == 1)
-					// Up-Down movement
-					state->right_y = event->jaxis.value;
-				else
-					ret = false;
-			}
-			else
-				ret = false;
-			break;
 		case SDL_CONTROLLERBUTTONDOWN:
 			CHIAKI_LOGI(this->log, "Controller %d button %d DOWN\n", event->cbutton.which, event->cbutton.button);
             switch(event->cbutton.button) {
