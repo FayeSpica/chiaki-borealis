@@ -51,6 +51,9 @@ COPY_DLLS="$BUILD_ROOT/openssl-1.1/x64/bin/libcrypto-1_1-x64.dll $BUILD_ROOT/ope
 
 echo "-- Configure"
 
+rm -rf build
+mkdir build && cd build
+
 cmake \
     -G Ninja \
 	-DCMAKE_C_COMPILER=gcc \
