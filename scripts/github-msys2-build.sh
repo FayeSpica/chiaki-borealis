@@ -44,8 +44,8 @@ wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.1/protoc
 
 export PATH="$PWD/bin:$PATH"
 
-PYTHON=`which python`
-pip install protobuf==3.19.5
+PYTHON=`c:/hostedtoolcache/windows/Python/3.9.13/x64/python.exe`
+${PYTHON} -m pip install protobuf==3.19.5
 
 COPY_DLLS="$BUILD_ROOT/openssl-1.1/x64/bin/libcrypto-1_1-x64.dll $BUILD_ROOT/openssl-1.1/x64/bin/libssl-1_1-x64.dll $CMAKE_SDL_ROOT/lib/x64/SDL2.dll"
 
