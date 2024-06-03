@@ -4,9 +4,12 @@
 #include <switch.h>
 #endif
 
-// #include <arpa/inet.h>
-// #include <netdb.h>
-// #include <netinet/in.h>
+#ifdef _WIN32
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 

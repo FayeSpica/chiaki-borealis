@@ -30,3 +30,37 @@ jobs:
           name: chiaki-borealis
           path: |
             ChiakiBorealis
+  linux-x64:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: alpine.sh --root {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: jirutka/setup-alpine@v1
+        with:
+          packages: >
+            build-base
+            git
+            cmake
+            ninja
+            protoc
+            py3-protobuf
+            py3-setuptools
+            opus-dev
+            ffmpeg-dev
+            sdl2-dev
+            gcc 
+            g++ 
+            openssl-dev 
+            glfw-dev 
+            glm-dev
+      - name: alpine-build-chiaki
+        run: |
+          ./scripts/github-alpine-build.sh
+      - name: Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chiaki-borealis
+          path: |
+            ChiakiBorealis

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-AGPL-3.0-only-OpenSSL
-#include <windows.h>
 // chiaki modules
 #include <chiaki/discovery.h>
 #include <chiaki/log.h>
@@ -10,6 +9,10 @@
 #include "gui.h"
 #include "io.h"
 #include "settings.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #ifdef __SWITCH__
 #include <switch.h>
@@ -144,6 +147,8 @@ int main(int argc, char *argv[])
 	return start();
 }
 
+#ifdef _WIN32
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 	return start();
 }
+#endif

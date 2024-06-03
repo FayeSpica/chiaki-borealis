@@ -96,12 +96,18 @@ set_target_properties(chiaki-borealis PROPERTIES
 
 target_include_directories(chiaki-borealis PRIVATE include example)
 
-message(STATUS "is win32 ???????? 11${WIN32}11")
+if (WIN32)
+	set(ADDON "iconv")
+else()
+	set(ADDON "${SWRESAMPLE}")
+endif()
+
+message(STATUS "is win32: ${WIN32}")
 
 target_link_libraries(chiaki-borealis
 	chiaki-lib
 	borealis
-	iconv
+	${ADDON}
 	SDL2::SDL2
 	SDL2::SDL2main
 	FFMPEG::avcodec
