@@ -2,7 +2,7 @@
 
 set -xe
 
-apk add git cmake ninja protoc py3-protobuf py3-setuptools opus-dev ffmpeg-dev sdl2-dev gcc g++ openssl-dev glfw-dev glm-dev
+apk add git cmake ninja protoc py3-protobuf py3-setuptools opus-dev ffmpeg-dev sdl2-dev gcc g++ openssl-dev glfw-dev glm-dev podman fuse udev argp-standalone
 
 rm -rf build
 
