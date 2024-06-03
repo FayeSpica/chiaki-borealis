@@ -38,8 +38,7 @@ include($CMAKE_SDL_ROOT/cmake/sdl2-config-version.cmake)" > "$CMAKE_SDL_ROOT/SDL
 
 
 mkdir protoc && cd protoc
-wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.1/protoc-3.9.1-win64.zip &&
-7z x protoc-3.9.1-win64.zip
+wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.1/protoc-3.9.1-win64.zip && 7z x protoc-3.9.1-win64.zip
 
 export PATH="$PWD/protoc/bin:$PATH"
 
