@@ -92,6 +92,6 @@ cp -v /mingw64/bin/glfw3.dll ChiakiBorealis
 # copy resources
 mkdir ChiakiBorealis/gui2
 cp -vr gui2/res ChiakiBorealis/gui2
-cp -vr gui2/chiaki.conf ChiakiBorealis/
+cp -vr scripts/chiaki.conf ChiakiBorealis/
 
 ls -alh ChiakiBorealis
