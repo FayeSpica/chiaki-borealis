@@ -45,7 +45,7 @@ cd $BUILD_ROOT
 export PATH="$PWD/protoc/bin:$PATH"
 
 PYTHON="python"
-"$PYTHON" -m pip install protobuf==3.19.5
+pip install protobuf==3.19.5
 
 COPY_DLLS="$BUILD_ROOT/openssl-1.1/x64/bin/libcrypto-1_1-x64.dll $BUILD_ROOT/openssl-1.1/x64/bin/libssl-1_1-x64.dll $SDL_ROOT/lib/x64/SDL2.dll"
 
