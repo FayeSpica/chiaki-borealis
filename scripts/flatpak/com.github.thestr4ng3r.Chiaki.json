@@ -93,8 +93,9 @@
             "builddir": "true",
             "sources": [
                 {
-                    "type": "dir",
-                    "path": "."
+                    "type": "git",
+                    "url": "https://github.com/FayeSpica/chiaki-borealis.git",
+                    "branch": "master"
                 }
             ]
         }
