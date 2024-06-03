@@ -20,8 +20,7 @@ jobs:
           msystem: mingw64
           update: true
           install: git mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake python3-pip mingw-w64-x86_64-7zip mingw-w64-x86_64-SDL2 make ninja yasm pkg-config diffutils mingw-w64-x86_64-glm mingw-w64-x86_64-glfw mingw-w64-x86_64-libiconv
-      - name: msys2-build
+      - name: msys2-build-chiaki
         run: |
           ls -alh /c/hostedtoolcache/windows/Python/3.9.13/x64
-          echo 'Running in MSYS2!'
           ./scripts/github-msys2-build.sh
