@@ -4,8 +4,6 @@
     "runtime-version": "5.15",
     "sdk": "org.kde.Sdk",
     "command": "chiaki-borealis",
-    "rename-icon": "chiaki-borealis",
-    "rename-desktop-file": "chiaki-borealis.desktop",
     "separate-locales": false,
     "finish-args": [
         "--share=network",
