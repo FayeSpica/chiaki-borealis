@@ -16,7 +16,7 @@ jobs:
         with:
           msystem: mingw64
           update: true
-          install: git mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake make ninja yasm pkg-config diffutils mingw-w64-x86_64-glm mingw-w64-x86_64-glfw mingw-w64-x86_64-libiconv
+          install: git mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-7zip make ninja yasm pkg-config diffutils mingw-w64-x86_64-glm mingw-w64-x86_64-glfw mingw-w64-x86_64-libiconv
       - name: CI-Build
         run: |
           echo 'Running in MSYS2!'
