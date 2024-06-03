@@ -84,7 +84,7 @@
                 ]
             },
             "build-commands": [
-                "pip3 install --prefix=/app google&&pip3 install --prefix=/app protobuf"
+                "pip3 install --prefix=/app protobuf==3.19.5"
             ]
         },
         {
