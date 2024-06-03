@@ -97,7 +97,7 @@
                 {
                     "type": "archive",
                     "url": "https://github.com/glfw/glfw/releases/download/3.3.4/glfw-3.3.4.zip",
-                    "sha256": "9e7b9a151603222d5e57f1cf789f3ff33ae36407f8de2e8d587a1cbd2d0a9e6b"
+                    "sha256": "bbd2c42c660b725e9755eb417e40b373f0d4c03138c9b2e210d02cd308bd99cd"
                 }
             ]
         },
@@ -111,7 +111,7 @@
                 {
                     "type": "archive",
                     "url": "https://github.com/g-truc/glm/archive/refs/tags/0.9.9.8.tar.gz",
-                    "sha256": "4e94e2ee1f87c0d791d0d1ec9dd41ea6ff1a994e9fcbbf03f935e617a330c1b1"
+                    "sha256": "7d508ab72cb5d43227a3711420f06ff99b0a0cb63ee2f93631b162bfe1fe9592"
                 }
             ]
         },
