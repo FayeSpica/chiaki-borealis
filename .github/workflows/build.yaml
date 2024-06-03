@@ -24,3 +24,9 @@ jobs:
         run: |
           ls -alh /c/hostedtoolcache/windows/Python/3.9.13/x64
           ./scripts/github-msys2-build.sh
+      - name: Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chiaki-borealis
+          path: |
+            ChiakiBorealis
