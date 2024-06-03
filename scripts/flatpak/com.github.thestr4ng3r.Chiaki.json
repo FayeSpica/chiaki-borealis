@@ -104,18 +104,14 @@
         {
             "name": "glm",
             "buildsystem": "cmake",
-            "build-commands": [
-                "mkdir -p /app/include/glm",
-                "cp -r glm/glm /app/include/glm"
-            ],
             "config-opts": [
                 "-DCMAKE_INSTALL_PREFIX=/app"
             ],
             "sources": [
                 {
-                    "type": "archive",
-                    "url": "https://github.com/g-truc/glm/archive/refs/tags/0.9.9.8.tar.gz",
-                    "sha256": "7d508ab72cb5d43227a3711420f06ff99b0a0cb63ee2f93631b162bfe1fe9592"
+                    "type": "git",
+                    "url": "https://github.com/FayeSpica/glm.git",
+                    "branch": "master"
                 }
             ]
         },
