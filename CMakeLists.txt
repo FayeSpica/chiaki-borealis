@@ -1,7 +1,7 @@
 
 cmake_minimum_required(VERSION 3.2)
 
-project(chiaki)
+project(chiaki-borealis)
 
 # Like option(), but the value can also be AUTO
 macro(tri_option name desc default)
@@ -35,7 +35,7 @@ set(CHIAKI_VERSION_MINOR 2)
 set(CHIAKI_VERSION_PATCH 0)
 set(CHIAKI_VERSION ${CHIAKI_VERSION_MAJOR}.${CHIAKI_VERSION_MINOR}.${CHIAKI_VERSION_PATCH})
 
-set(CPACK_PACKAGE_NAME "chiaki")
+set(CPACK_PACKAGE_NAME "chiaki-borealis")
 set(CPACK_PACKAGE_DESCRIPTION "Open Source PS4 remote play client")
 set(CPACK_PACKAGE_VERSION_MAJOR ${CHIAKI_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${CHIAKI_VERSION_MINOR})
