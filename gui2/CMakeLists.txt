@@ -115,3 +115,6 @@ target_link_libraries(chiaki-borealis
 	FFMPEG::swscale
 	${SWSCALE})
 # 	${SWRESAMPLE}
+
+# install
+install(TARGETS chiaki-borealis DESTINATION bin)
