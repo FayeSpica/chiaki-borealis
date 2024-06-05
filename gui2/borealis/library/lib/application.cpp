@@ -183,13 +183,19 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 
-    Application::window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, title.c_str(), nullptr, nullptr);
+    // Switch to fullscreen mode
+    GLFWmonitor* monitor    = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    Application::window = glfwCreateWindow(mode->width, mode->height, title.c_str(), nullptr, nullptr);
     if (!window)
     {
         Logger::error("glfw: failed to create window");
         glfwTerminate();
         return false;
     }
+
+    glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 
     // Configure window
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
@@ -222,7 +228,7 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
         return false;
     }
 
-    windowFramebufferSizeCallback(window, WINDOW_WIDTH, WINDOW_HEIGHT);
+    windowFramebufferSizeCallback(window, mode->width, mode->height);
     glfwSetTime(0.0);
 
     // Load fonts
