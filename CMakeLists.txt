@@ -9,6 +9,7 @@ macro(tri_option name desc default)
 	set_property(CACHE "${name}" PROPERTY STRINGS AUTO ON OFF)
 endmacro()
 
+option(CHIAKI_ENABLE_FILE_LOG "Enable debug file log" OFF)
 option(CHIAKI_ENABLE_TESTS "Enable tests for Chiaki" OFF)
 option(CHIAKI_ENABLE_CLI "Enable CLI for Chiaki" OFF)
 option(CHIAKI_ENABLE_ANDROID "Enable Android (Use only as part of the Gradle Project)" OFF)

@@ -73,7 +73,7 @@ CHIAKI_EXPORT void chiaki_log(ChiakiLog *log, ChiakiLogLevel level, const char *
 	va_start(args, fmt);
 	int written = vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
-
+#ifdef CHIAKI_ENABLE_FILE_LOG
     FILE *logFile = fopen("chiaki.log", "a");
     if (logFile != NULL) {
         fprintf(logFile, "%s\n", msg);
@@ -81,6 +81,7 @@ CHIAKI_EXPORT void chiaki_log(ChiakiLog *log, ChiakiLogLevel level, const char *
     } else {
         fprintf(stderr, "Unable to open log file\n");
     }
+#endif
 
 	if(written < 0)
 		return;
@@ -94,7 +95,7 @@ CHIAKI_EXPORT void chiaki_log(ChiakiLog *log, ChiakiLogLevel level, const char *
 		va_start(args, fmt);
 		written = vsnprintf(msg, written + 1, fmt, args);
 		va_end(args);
-
+#ifdef CHIAKI_ENABLE_FILE_LOG
         FILE *logFile = fopen("chiaki.log", "a");
         if (logFile != NULL) {
             fprintf(logFile, "%s\n", msg);
@@ -102,7 +103,7 @@ CHIAKI_EXPORT void chiaki_log(ChiakiLog *log, ChiakiLogLevel level, const char *
         } else {
             fprintf(stderr, "Unable to open log file\n");
         }
-
+#endif
 		if(written < 0)
 		{
 			free(msg);
