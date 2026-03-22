@@ -10,6 +10,18 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_register"
+        android:icon="@drawable/ic_register"
+        android:title="@string/action_register"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_add_manual"
+        android:icon="@drawable/ic_add_manual"
+        android:title="@string/action_add_manual"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_settings"
         android:icon="@drawable/ic_settings"
         android:title="@string/action_settings"

@@ -3,8 +3,14 @@
 #ifndef CHIAKI_GUI_H
 #define CHIAKI_GUI_H
 
+#ifdef ANDROID
+#include <GLES3/gl3.h>
+#else
 #include <glad.h>
+#ifndef __SDL2__
 #include <GLFW/glfw3.h>
+#endif
+#endif
 #include "nanovg.h"
 #include "nanovg_gl.h"
 #include "nanovg_gl_utils.h"

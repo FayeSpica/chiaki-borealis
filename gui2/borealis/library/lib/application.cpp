@@ -26,9 +26,21 @@
 #include <borealis.hpp>
 #include <string>
 
+#ifdef __SDL2__
+#include <SDL.h>
+#ifdef ANDROID
+#include <GLES3/gl3.h>
+#define NANOVG_GLES3_IMPLEMENTATION
+#else
+#include <glad/glad.h>
+#define NANOVG_GL3_IMPLEMENTATION
+#endif
+#else
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
+#define NANOVG_GL3_IMPLEMENTATION
+#endif
 
 #define GLM_FORCE_PURE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -40,7 +52,6 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-#define NANOVG_GL3_IMPLEMENTATION
 #include <nanovg/nanovg_gl.h>
 
 #ifdef __SWITCH__
@@ -60,13 +71,547 @@ constexpr uint32_t WINDOW_HEIGHT = 720;
 #define BUTTON_REPEAT_DELAY 15
 #define BUTTON_REPEAT_CADENCY 5
 
-// glfw code from the glfw hybrid app by fincs
-// https://github.com/fincs/hybrid_app
-
 using namespace brls::i18n::literals;
 
 namespace brls
 {
+
+#ifdef __SDL2__
+
+// SDL2 backend
+
+static void sdlWindowSizeChanged(int width, int height)
+{
+    if (!width || !height)
+        return;
+
+    glViewport(0, 0, width, height);
+    Application::windowScale = (float)width / (float)WINDOW_WIDTH;
+
+    float contentHeight = ((float)height / (Application::windowScale * (float)WINDOW_HEIGHT)) * (float)WINDOW_HEIGHT;
+
+    Application::contentWidth  = WINDOW_WIDTH;
+    Application::contentHeight = (unsigned)roundf(contentHeight);
+
+    Application::resizeNotificationManager();
+
+    Logger::info("Window size changed to {}x{}", width, height);
+    Logger::info("New scale factor is {}", Application::windowScale);
+}
+
+static void sdlHandleKeyEvent(SDL_Keycode key, bool pressed, BrlsGamepadState& gamepad)
+{
+    if (!pressed) return;
+
+    // Keyboard -> DPAD Mapping
+    switch (key)
+    {
+        case SDLK_LEFT:   gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_LEFT]    = BRLS_PRESS; break;
+        case SDLK_RIGHT:  gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_RIGHT]   = BRLS_PRESS; break;
+        case SDLK_UP:     gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_UP]      = BRLS_PRESS; break;
+        case SDLK_DOWN:   gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_DOWN]    = BRLS_PRESS; break;
+        case SDLK_RETURN: gamepad.buttons[BRLS_GAMEPAD_BUTTON_A]            = BRLS_PRESS; break;
+        case SDLK_BACKSPACE: gamepad.buttons[BRLS_GAMEPAD_BUTTON_B]         = BRLS_PRESS; break;
+        case SDLK_ESCAPE: gamepad.buttons[BRLS_GAMEPAD_BUTTON_START]        = BRLS_PRESS; break;
+        case SDLK_F1:     gamepad.buttons[BRLS_GAMEPAD_BUTTON_BACK]         = BRLS_PRESS; break;
+        case SDLK_l:      gamepad.buttons[BRLS_GAMEPAD_BUTTON_LEFT_BUMPER]  = BRLS_PRESS; break;
+        case SDLK_r:      gamepad.buttons[BRLS_GAMEPAD_BUTTON_RIGHT_BUMPER] = BRLS_PRESS; break;
+        default: break;
+    }
+}
+
+static void sdlReadController(BrlsGamepadState& gamepad, SDL_GameController* controller)
+{
+    if (!controller) return;
+
+    // Buttons
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_A]            = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_B]            = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_B) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_X]            = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_X) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_Y]            = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_Y) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_LEFT_BUMPER]  = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_RIGHT_BUMPER] = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_BACK]         = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_BACK) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_START]        = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_GUIDE]        = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_GUIDE) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_LEFT_THUMB]   = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_LEFTSTICK) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_RIGHT_THUMB]  = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_RIGHTSTICK) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_UP]      = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_DOWN]    = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_LEFT]    = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT) ? BRLS_PRESS : BRLS_RELEASE;
+    gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_RIGHT]   = SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) ? BRLS_PRESS : BRLS_RELEASE;
+}
+
+bool Application::init(std::string title, Style* style, LibraryViewsThemeVariantsWrapper* themeVariantsWrapper)
+{
+    // Init rng
+    std::srand(std::time(nullptr));
+
+    // Init managers
+    Application::taskManager         = new TaskManager();
+    Application::notificationManager = new NotificationManager();
+
+    // Init static variables
+    Application::currentFocus = nullptr;
+    Application::oldGamepad   = {};
+    Application::gamepad      = {};
+    Application::title        = title;
+    Application::shouldClose  = false;
+
+    // Init theme and style
+    if (!themeVariantsWrapper)
+        themeVariantsWrapper = new LibraryViewsThemeVariantsWrapper(new HorizonLightTheme(), new HorizonDarkTheme());
+
+    if (!style)
+        style = new HorizonStyle();
+
+    Application::currentThemeVariantsWrapper = themeVariantsWrapper;
+    Application::currentStyle                = style;
+
+    // Init SDL2
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
+    {
+        Logger::error("Failed to initialize SDL: {}", SDL_GetError());
+        return false;
+    }
+
+#ifdef ANDROID
+    // Android: use OpenGL ES 3.0
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_SetHint(SDL_HINT_ANDROID_TRAP_BACK_BUTTON, "1");
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+#else
+    // Desktop: use OpenGL Core 3.2+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#ifdef __APPLE__
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+#else
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+#endif
+#endif
+
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+    // Create window
+    Uint32 windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+#ifdef ANDROID
+    windowFlags |= SDL_WINDOW_FULLSCREEN;
+#else
+    windowFlags |= SDL_WINDOW_RESIZABLE;
+#endif
+
+    Application::window = SDL_CreateWindow(
+        title.c_str(),
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        WINDOW_WIDTH, WINDOW_HEIGHT,
+        windowFlags);
+
+    if (!window)
+    {
+        Logger::error("SDL: failed to create window: {}", SDL_GetError());
+        SDL_Quit();
+        return false;
+    }
+
+    // Create GL context
+    Application::glContext = SDL_GL_CreateContext(window);
+    if (!glContext)
+    {
+        Logger::error("SDL: failed to create GL context: {}", SDL_GetError());
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return false;
+    }
+
+    SDL_GL_MakeCurrent(window, glContext);
+    SDL_GL_SetSwapInterval(1);
+
+#ifndef ANDROID
+    // Load OpenGL routines using glad (not needed on Android with GLES3)
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+    {
+        Logger::error("Failed to initialize glad");
+        SDL_GL_DeleteContext(glContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return false;
+    }
+#endif
+
+    Logger::info("GL Vendor: {}", (const char*)glGetString(GL_VENDOR));
+    Logger::info("GL Renderer: {}", (const char*)glGetString(GL_RENDERER));
+    Logger::info("GL Version: {}", (const char*)glGetString(GL_VERSION));
+
+    // Open first game controller
+    for (int i = 0; i < SDL_NumJoysticks(); i++)
+    {
+        if (SDL_IsGameController(i))
+        {
+            Application::sdlController = SDL_GameControllerOpen(i);
+            if (sdlController)
+            {
+                Logger::info("Gamepad detected: {}", SDL_GameControllerName(sdlController));
+                break;
+            }
+        }
+    }
+
+    // Initialize nanovg
+#ifdef ANDROID
+    Application::vg = nvgCreateGLES3(NVG_STENCIL_STROKES | NVG_ANTIALIAS);
+#else
+    Application::vg = nvgCreateGL3(NVG_STENCIL_STROKES | NVG_ANTIALIAS);
+#endif
+    if (!vg)
+    {
+        Logger::error("Unable to init nanovg");
+        SDL_GL_DeleteContext(glContext);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return false;
+    }
+
+    int windowW, windowH;
+    SDL_GL_GetDrawableSize(window, &windowW, &windowH);
+    sdlWindowSizeChanged(windowW, windowH);
+
+    // Load fonts
+#ifdef ANDROID
+    // On Android use assets path
+    if (access(BOREALIS_ASSET("inter/Inter-Switch.ttf"), F_OK) != -1)
+        Application::fontStash.regular = Application::loadFont("regular", BOREALIS_ASSET("inter/Inter-Switch.ttf"));
+
+    if (Application::fontStash.regular == -1)
+        brls::Logger::warning("Couldn't load regular font, no text will be displayed!");
+#else
+    // Use illegal font if available
+    if (access(BOREALIS_ASSET("Illegal-Font.ttf"), F_OK) != -1)
+        Application::fontStash.regular = Application::loadFont("regular", BOREALIS_ASSET("Illegal-Font.ttf"));
+    else
+        Application::fontStash.regular = Application::loadFont("regular", BOREALIS_ASSET("inter/Inter-Switch.ttf"));
+
+    if (Application::fontStash.regular == -1)
+        brls::Logger::warning("Couldn't load regular font, no text will be displayed!");
+
+    if (access(BOREALIS_ASSET("Wingdings.ttf"), F_OK) != -1)
+        Application::fontStash.sharedSymbols = Application::loadFont("sharedSymbols", BOREALIS_ASSET("Wingdings.ttf"));
+#endif
+
+    // Material font
+    if (access(BOREALIS_ASSET("material/MaterialIcons-Regular.ttf"), F_OK) != -1)
+        Application::fontStash.material = Application::loadFont("material", BOREALIS_ASSET("material/MaterialIcons-Regular.ttf"));
+
+    // Set symbols font as fallback
+    if (Application::fontStash.sharedSymbols)
+    {
+        Logger::info("Using shared symbols font");
+        nvgAddFallbackFontId(Application::vg, Application::fontStash.regular, Application::fontStash.sharedSymbols);
+    }
+
+    // Set Material as fallback
+    if (Application::fontStash.material)
+    {
+        Logger::info("Using Material font");
+        nvgAddFallbackFontId(Application::vg, Application::fontStash.regular, Application::fontStash.material);
+    }
+    else
+    {
+        Logger::warning("Material font not found");
+    }
+
+    // Load theme - default to dark on Android TV
+#ifdef ANDROID
+    Application::currentThemeVariant = ThemeVariant::DARK;
+#else
+    char* themeEnv = getenv("BOREALIS_THEME");
+    if (themeEnv != nullptr && !strcasecmp(themeEnv, "DARK"))
+        Application::currentThemeVariant = ThemeVariant::DARK;
+    else
+        Application::currentThemeVariant = ThemeVariant::LIGHT;
+#endif
+
+    // Init window size
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    Application::windowWidth  = viewport[2];
+    Application::windowHeight = viewport[3];
+
+    // Init animations engine
+    menu_animation_init();
+
+    // Default FPS cap
+    Application::setMaximumFPS(DEFAULT_FPS);
+
+    return true;
+}
+
+bool Application::mainLoop()
+{
+    // Frame start
+    retro_time_t frameStart = 0;
+    if (Application::frameTime > 0.0f)
+        frameStart = cpu_features_get_time_usec();
+
+    // SDL events
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+        switch (event.type)
+        {
+            case SDL_QUIT:
+                Application::shouldClose = true;
+                break;
+
+            case SDL_WINDOWEVENT:
+                if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
+                    event.window.event == SDL_WINDOWEVENT_RESIZED)
+                {
+                    int w, h;
+                    SDL_GL_GetDrawableSize(Application::window, &w, &h);
+                    sdlWindowSizeChanged(w, h);
+                }
+                break;
+
+            case SDL_KEYDOWN:
+                if (Application::textInputActive)
+                {
+                    if (event.key.keysym.sym == SDLK_RETURN || event.key.keysym.sym == SDLK_KP_ENTER)
+                        Application::stopTextInput(true);
+                    else if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_AC_BACK)
+                        Application::stopTextInput(false);
+                    else if (event.key.keysym.sym == SDLK_BACKSPACE && !Application::textInputBuffer.empty())
+                    {
+                        Application::textInputBuffer.pop_back();
+                    }
+                }
+                else
+                {
+                    sdlHandleKeyEvent(event.key.keysym.sym, true, Application::gamepad);
+                }
+                break;
+
+            case SDL_TEXTINPUT:
+                if (Application::textInputActive)
+                {
+                    if ((int)Application::textInputBuffer.length() < Application::textInputMaxLength)
+                        Application::textInputBuffer += event.text.text;
+                }
+                break;
+
+            case SDL_CONTROLLERBUTTONDOWN:
+                if (Application::textInputActive)
+                {
+                    // B button cancels text input
+                    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_B ||
+                        event.cbutton.button == SDL_CONTROLLER_BUTTON_BACK)
+                        Application::stopTextInput(false);
+                    // A button confirms text input
+                    else if (event.cbutton.button == SDL_CONTROLLER_BUTTON_A ||
+                             event.cbutton.button == SDL_CONTROLLER_BUTTON_START)
+                        Application::stopTextInput(true);
+                }
+                break;
+
+            case SDL_CONTROLLERDEVICEADDED:
+                if (!Application::sdlController)
+                {
+                    Application::sdlController = SDL_GameControllerOpen(event.cdevice.which);
+                    if (sdlController)
+                        Logger::info("Controller connected: {}", SDL_GameControllerName(sdlController));
+                }
+                break;
+
+            case SDL_CONTROLLERDEVICEREMOVED:
+                if (Application::sdlController &&
+                    event.cdevice.which == SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(sdlController)))
+                {
+                    SDL_GameControllerClose(Application::sdlController);
+                    Application::sdlController = nullptr;
+                    Logger::info("Controller disconnected");
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    if (Application::shouldClose)
+    {
+        Application::exit();
+        return false;
+    }
+
+    // Skip controller/gamepad processing while text input is active
+    if (Application::textInputActive)
+    {
+        // Still render frames
+        GLint viewport[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        unsigned newWidth  = viewport[2];
+        unsigned newHeight = viewport[3];
+        if (Application::windowWidth != newWidth || Application::windowHeight != newHeight)
+        {
+            Application::windowWidth  = newWidth;
+            Application::windowHeight = newHeight;
+            Application::onWindowSizeChanged();
+        }
+        menu_animation_update();
+        Application::taskManager->frame();
+        Application::frame();
+        SDL_GL_SwapWindow(window);
+        if (Application::frameTime > 0.0f)
+        {
+            retro_time_t currentFrameTime = cpu_features_get_time_usec() - frameStart;
+            retro_time_t ft = (retro_time_t)(Application::frameTime * 1000);
+            if (ft > currentFrameTime)
+                std::this_thread::sleep_for(std::chrono::microseconds(ft - currentFrameTime));
+        }
+        return true;
+    }
+
+    // Read controller state
+    memset(&Application::gamepad, 0, sizeof(Application::gamepad));
+    if (Application::sdlController)
+    {
+        sdlReadController(Application::gamepad, Application::sdlController);
+    }
+    else
+    {
+        // Keyboard fallback - read current key state
+        const Uint8* keys = SDL_GetKeyboardState(nullptr);
+        if (keys)
+        {
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_LEFT]    = keys[SDL_SCANCODE_LEFT]      ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_RIGHT]   = keys[SDL_SCANCODE_RIGHT]     ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_UP]      = keys[SDL_SCANCODE_UP]        ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_DOWN]    = keys[SDL_SCANCODE_DOWN]      ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_A]            = keys[SDL_SCANCODE_RETURN]    ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_B]            = keys[SDL_SCANCODE_BACKSPACE] ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_START]        = keys[SDL_SCANCODE_ESCAPE]    ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_BACK]         = keys[SDL_SCANCODE_F1]        ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_LEFT_BUMPER]  = keys[SDL_SCANCODE_L]         ? BRLS_PRESS : BRLS_RELEASE;
+            Application::gamepad.buttons[BRLS_GAMEPAD_BUTTON_RIGHT_BUMPER] = keys[SDL_SCANCODE_R]         ? BRLS_PRESS : BRLS_RELEASE;
+        }
+    }
+
+    // Trigger gamepad events
+    bool anyButtonPressed               = false;
+    bool repeating                      = false;
+    static retro_time_t buttonPressTime = 0;
+    static int repeatingButtonTimer     = 0;
+
+    for (int i = BRLS_GAMEPAD_BUTTON_A; i <= BRLS_GAMEPAD_BUTTON_LAST; i++)
+    {
+        if (Application::gamepad.buttons[i] == BRLS_PRESS)
+        {
+            anyButtonPressed = true;
+            repeating        = (repeatingButtonTimer > BUTTON_REPEAT_DELAY && repeatingButtonTimer % BUTTON_REPEAT_CADENCY == 0);
+
+            if (Application::oldGamepad.buttons[i] != BRLS_PRESS || repeating)
+                Application::onGamepadButtonPressed(i, repeating);
+        }
+
+        if (Application::gamepad.buttons[i] != Application::oldGamepad.buttons[i])
+            buttonPressTime = repeatingButtonTimer = 0;
+    }
+
+    if (anyButtonPressed && cpu_features_get_time_usec() - buttonPressTime > 1000)
+    {
+        buttonPressTime = cpu_features_get_time_usec();
+        repeatingButtonTimer++;
+    }
+
+    Application::oldGamepad = Application::gamepad;
+
+    // Handle window size changes
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    unsigned newWidth  = viewport[2];
+    unsigned newHeight = viewport[3];
+
+    if (Application::windowWidth != newWidth || Application::windowHeight != newHeight)
+    {
+        Application::windowWidth  = newWidth;
+        Application::windowHeight = newHeight;
+        Application::onWindowSizeChanged();
+    }
+
+    // Animations
+    menu_animation_update();
+
+    // Tasks
+    Application::taskManager->frame();
+
+    // Render
+    Application::frame();
+    SDL_GL_SwapWindow(window);
+
+    // Sleep if necessary
+    if (Application::frameTime > 0.0f)
+    {
+        retro_time_t currentFrameTime = cpu_features_get_time_usec() - frameStart;
+        retro_time_t frameTime        = (retro_time_t)(Application::frameTime * 1000);
+
+        if (frameTime > currentFrameTime)
+        {
+            retro_time_t toSleep = frameTime - currentFrameTime;
+            std::this_thread::sleep_for(std::chrono::microseconds(toSleep));
+        }
+    }
+
+    return true;
+}
+
+void Application::quit()
+{
+    Application::shouldClose = true;
+}
+
+void Application::startTextInput(const std::string& header, const std::string& initial, int maxLen, std::function<void(std::string)> cb)
+{
+    Application::textInputActive = true;
+    Application::textInputBuffer = initial;
+    Application::textInputHeader = header;
+    Application::textInputMaxLength = maxLen;
+    Application::textInputCallback = cb;
+
+    SDL_Rect rect = {0, 360, 1280, 360};
+    SDL_SetTextInputRect(&rect);
+    SDL_StartTextInput();
+
+    Logger::info("Text input started: {}", header);
+}
+
+void Application::stopTextInput(bool submit)
+{
+    SDL_StopTextInput();
+    Application::textInputActive = false;
+
+    if (submit && Application::textInputCallback && !Application::textInputBuffer.empty())
+    {
+        auto cb = Application::textInputCallback;
+        auto text = Application::textInputBuffer;
+        Application::textInputCallback = nullptr;
+        cb(text);
+    }
+    else
+    {
+        Application::textInputCallback = nullptr;
+    }
+
+    Logger::info("Text input stopped, submit={}", submit);
+}
+
+#else // GLFW backend
 
 // TODO: Use this instead of a glViewport each frame
 static void windowFramebufferSizeCallback(GLFWwindow* window, int width, int height)
@@ -116,18 +661,15 @@ static void windowKeyCallback(GLFWwindow* window, int key, int scancode, int act
 
             if (!glfwGetWindowMonitor(window))
             {
-                // Back up window position/size
                 glfwGetWindowPos(window, &saved_x, &saved_y);
                 glfwGetWindowSize(window, &saved_width, &saved_height);
 
-                // Switch to fullscreen mode
                 GLFWmonitor* monitor    = glfwGetPrimaryMonitor();
                 const GLFWvidmode* mode = glfwGetVideoMode(monitor);
                 glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
             }
             else
             {
-                // Switch back to windowed mode
                 glfwSetWindowMonitor(window, nullptr, saved_x, saved_y, saved_width, saved_height, GLFW_DONT_CARE);
             }
         }
@@ -170,12 +712,10 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
 
     // Create window
 #ifdef __APPLE__
-    // Explicitly ask for a 3.2 context on OS X
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // Force scaling off to keep desired framebuffer size
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
 #else
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -183,7 +723,6 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 
-    // Switch to fullscreen mode
     GLFWmonitor* monitor    = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
@@ -197,14 +736,12 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
 
     glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 
-    // Configure window
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, windowFramebufferSizeCallback);
     glfwSetKeyCallback(window, windowKeyCallback);
     glfwSetJoystickCallback(joystickCallback);
 
-    // Load OpenGL routines using glad
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glfwSwapInterval(1);
 
@@ -219,7 +756,6 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
         glfwGetGamepadState(GLFW_JOYSTICK_1, &state);
     }
 
-    // Initialize the scene
     Application::vg = nvgCreateGL3(NVG_STENCIL_STROKES | NVG_ANTIALIAS);
     if (!vg)
     {
@@ -236,7 +772,6 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
     {
         PlFontData font;
 
-        // Standard font
         Result rc = plGetSharedFontByType(&font, PlSharedFontType_Standard);
         if (R_SUCCEEDED(rc))
         {
@@ -244,7 +779,6 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
             Application::fontStash.regular = Application::loadFontFromMemory("regular", font.address, font.size, false);
         }
 
-        // Korean font
         rc = plGetSharedFontByType(&font, PlSharedFontType_KO);
         if (R_SUCCEEDED(rc))
         {
@@ -253,7 +787,6 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
             nvgAddFallbackFontId(Application::vg, Application::fontStash.regular, Application::fontStash.korean);
         }
 
-        // Extented font
         rc = plGetSharedFontByType(&font, PlSharedFontType_NintendoExt);
         if (R_SUCCEEDED(rc))
         {
@@ -262,7 +795,6 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
         }
     }
 #else
-    // Use illegal font if available
     if (access(BOREALIS_ASSET("Illegal-Font.ttf"), F_OK) != -1)
         Application::fontStash.regular = Application::loadFont("regular", BOREALIS_ASSET("Illegal-Font.ttf"));
     else
@@ -275,11 +807,9 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
         Application::fontStash.sharedSymbols = Application::loadFont("sharedSymbols", BOREALIS_ASSET("Wingdings.ttf"));
 #endif
 
-    // Material font
     if (access(BOREALIS_ASSET("material/MaterialIcons-Regular.ttf"), F_OK) != -1)
         Application::fontStash.material = Application::loadFont("material", BOREALIS_ASSET("material/MaterialIcons-Regular.ttf"));
 
-    // Set symbols font as fallback
     if (Application::fontStash.sharedSymbols)
     {
         Logger::info("Using shared symbols font");
@@ -290,7 +820,6 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
         Logger::warning("Shared symbols font not found");
     }
 
-    // Set Material as fallback
     if (Application::fontStash.material)
     {
         Logger::info("Using Material font");
@@ -318,17 +847,13 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
         Application::currentThemeVariant = ThemeVariant::LIGHT;
 #endif
 
-    // Init window size
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
 
     Application::windowWidth  = viewport[2];
     Application::windowHeight = viewport[3];
 
-    // Init animations engine
     menu_animation_init();
-
-    // Default FPS cap
     Application::setMaximumFPS(DEFAULT_FPS);
 
     return true;
@@ -336,12 +861,10 @@ bool Application::init(std::string title, Style* style, LibraryViewsThemeVariant
 
 bool Application::mainLoop()
 {
-    // Frame start
     retro_time_t frameStart = 0;
     if (Application::frameTime > 0.0f)
         frameStart = cpu_features_get_time_usec();
 
-    // glfw events
     bool is_active;
     do
     {
@@ -358,7 +881,6 @@ bool Application::mainLoop()
         }
     } while (!is_active);
 
-    // libnx applet main loop
 #ifdef __SWITCH__
     if (!appletMainLoop())
     {
@@ -367,10 +889,8 @@ bool Application::mainLoop()
     }
 #endif
 
-    // Gamepad
     if (!glfwGetGamepadState(GLFW_JOYSTICK_1, &Application::gamepad))
     {
-        // Keyboard -> DPAD Mapping
         Application::gamepad.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT]    = glfwGetKey(window, GLFW_KEY_LEFT);
         Application::gamepad.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT]   = glfwGetKey(window, GLFW_KEY_RIGHT);
         Application::gamepad.buttons[GLFW_GAMEPAD_BUTTON_DPAD_UP]      = glfwGetKey(window, GLFW_KEY_UP);
@@ -382,9 +902,6 @@ bool Application::mainLoop()
         Application::gamepad.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER]  = glfwGetKey(window, GLFW_KEY_L);
         Application::gamepad.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] = glfwGetKey(window, GLFW_KEY_R);
     }
-
-    // Trigger gamepad events
-    // TODO: Translate axis events to dpad events here
 
     bool anyButtonPressed               = false;
     bool repeating                      = false;
@@ -409,12 +926,11 @@ bool Application::mainLoop()
     if (anyButtonPressed && cpu_features_get_time_usec() - buttonPressTime > 1000)
     {
         buttonPressTime = cpu_features_get_time_usec();
-        repeatingButtonTimer++; // Increased once every ~1ms
+        repeatingButtonTimer++;
     }
 
     Application::oldGamepad = Application::gamepad;
 
-    // Handle window size changes
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
 
@@ -428,17 +944,11 @@ bool Application::mainLoop()
         Application::onWindowSizeChanged();
     }
 
-    // Animations
     menu_animation_update();
-
-    // Tasks
     Application::taskManager->frame();
-
-    // Render
     Application::frame();
     glfwSwapBuffers(window);
 
-    // Sleep if necessary
     if (Application::frameTime > 0.0f)
     {
         retro_time_t currentFrameTime = cpu_features_get_time_usec() - frameStart;
@@ -459,35 +969,34 @@ void Application::quit()
     glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
+#endif // __SDL2__ / GLFW
+
+// ===== Common code (shared by both backends) =====
+
 void Application::navigate(FocusDirection direction)
 {
     View* currentFocus = Application::currentFocus;
 
-    // Do nothing if there is no current focus or if it doesn't have a parent
-    // (in which case there is nothing to traverse)
     if (!currentFocus || !currentFocus->hasParent())
         return;
 
-    // Get next view to focus by traversing the views tree upwards
     View* nextFocus = currentFocus->getParent()->getNextFocus(direction, currentFocus);
 
-    while (!nextFocus) // stop when we find a view to focus
+    while (!nextFocus)
     {
-        if (!currentFocus->hasParent() || !currentFocus->getParent()->hasParent()) // stop when we reach the root of the tree
+        if (!currentFocus->hasParent() || !currentFocus->getParent()->hasParent())
             break;
 
         currentFocus = currentFocus->getParent();
         nextFocus    = currentFocus->getParent()->getNextFocus(direction, currentFocus);
     }
 
-    // No view to focus at the end of the traversal: wiggle and return
     if (!nextFocus)
     {
         Application::currentFocus->shakeHighlight(direction);
         return;
     }
 
-    // Otherwise give it focus
     Application::giveFocus(nextFocus);
 }
 
@@ -501,25 +1010,38 @@ void Application::onGamepadButtonPressed(char button, bool repeating)
 
     Application::repetitionOldFocus = Application::currentFocus;
 
-    // Actions
     if (Application::handleAction(button))
         return;
 
-    // Navigation
-    // Only navigate if the button hasn't been consumed by an action
-    // (allows overriding DPAD buttons using actions)
+    // Navigation - button constants are the same layout between GLFW and BRLS
     switch (button)
     {
+#ifdef __SDL2__
+        case BRLS_GAMEPAD_BUTTON_DPAD_DOWN:
+#else
         case GLFW_GAMEPAD_BUTTON_DPAD_DOWN:
+#endif
             Application::navigate(FocusDirection::DOWN);
             break;
+#ifdef __SDL2__
+        case BRLS_GAMEPAD_BUTTON_DPAD_UP:
+#else
         case GLFW_GAMEPAD_BUTTON_DPAD_UP:
+#endif
             Application::navigate(FocusDirection::UP);
             break;
+#ifdef __SDL2__
+        case BRLS_GAMEPAD_BUTTON_DPAD_LEFT:
+#else
         case GLFW_GAMEPAD_BUTTON_DPAD_LEFT:
+#endif
             Application::navigate(FocusDirection::LEFT);
             break;
+#ifdef __SDL2__
+        case BRLS_GAMEPAD_BUTTON_DPAD_RIGHT:
+#else
         case GLFW_GAMEPAD_BUTTON_DPAD_RIGHT:
+#endif
             Application::navigate(FocusDirection::RIGHT);
             break;
         default:
@@ -566,7 +1088,6 @@ bool Application::handleAction(char button)
 
 void Application::frame()
 {
-    // Frame context
     FrameContext frameContext = FrameContext();
 
     frameContext.pixelRatio = (float)Application::windowWidth / (float)Application::windowHeight;
@@ -574,7 +1095,6 @@ void Application::frame()
     frameContext.fontStash  = &Application::fontStash;
     frameContext.theme      = Application::getTheme();
 
-    // GL Clear
     glClearColor(
         frameContext.theme->backgroundColor[0],
         frameContext.theme->backgroundColor[1],
@@ -591,8 +1111,6 @@ void Application::frame()
 
     std::vector<View*> viewsToDraw;
 
-    // Draw all views in the stack
-    // until we find one that's not translucent
     for (size_t i = 0; i < Application::viewStack.size(); i++)
     {
         View* view = Application::viewStack[Application::viewStack.size() - 1 - i];
@@ -611,15 +1129,12 @@ void Application::frame()
         view->frame(&frameContext);
     }
 
-    // Framerate counter
     if (Application::framerateCounter)
         Application::framerateCounter->frame(&frameContext);
 
-    // Notifications
     Application::notificationManager->frame(&frameContext);
 
-    // End frame
-    nvgResetTransform(Application::vg); // scale
+    nvgResetTransform(Application::vg);
     nvgEndFrame(Application::vg);
 
     if (Application::background)
@@ -631,9 +1146,26 @@ void Application::exit()
     Application::clear();
 
     if (Application::vg)
+    {
+#ifdef __SDL2__
+#ifdef ANDROID
+        nvgDeleteGLES3(Application::vg);
+#else
         nvgDeleteGL3(Application::vg);
-
+#endif
+    }
+    if (Application::sdlController)
+        SDL_GameControllerClose(Application::sdlController);
+    if (Application::glContext)
+        SDL_GL_DeleteContext(Application::glContext);
+    if (Application::window)
+        SDL_DestroyWindow(Application::window);
+    SDL_Quit();
+#else
+        nvgDeleteGL3(Application::vg);
+    }
     glfwTerminate();
+#endif
 
     menu_animation_free();
 
@@ -724,7 +1256,7 @@ void Application::giveFocus(View* view)
 
 void Application::popView(ViewAnimation animation, std::function<void(void)> cb)
 {
-    if (Application::viewStack.size() <= 1) // never pop the root view
+    if (Application::viewStack.size() <= 1)
         return;
 
     Application::blockInputs();
@@ -734,16 +1266,13 @@ void Application::popView(ViewAnimation animation, std::function<void(void)> cb)
 
     last->setForceTranslucent(true);
 
-    bool wait = animation == ViewAnimation::FADE; // wait for the new view animation to be done before showing the old one?
+    bool wait = animation == ViewAnimation::FADE;
 
-    // Hide animation (and show previous view, if any)
     last->hide([last, animation, wait, cb]() {
         last->setForceTranslucent(false);
         Application::viewStack.pop_back();
         delete last;
 
-        // Animate the old view once the new one
-        // has ended its animation
         if (Application::viewStack.size() > 0 && wait)
         {
             View* newLast = Application::viewStack[Application::viewStack.size() - 1];
@@ -763,7 +1292,6 @@ void Application::popView(ViewAnimation animation, std::function<void(void)> cb)
     },
         true, animation);
 
-    // Animate the old view immediately
     if (!wait && Application::viewStack.size() > 1)
     {
         View* toShow = Application::viewStack[Application::viewStack.size() - 2];
@@ -771,7 +1299,6 @@ void Application::popView(ViewAnimation animation, std::function<void(void)> cb)
         toShow->show(cb, true, animation);
     }
 
-    // Focus
     if (Application::focusStack.size() > 0)
     {
         View* newFocus = Application::focusStack[Application::focusStack.size() - 1];
@@ -787,25 +1314,21 @@ void Application::pushView(View* view, ViewAnimation animation)
 {
     Application::blockInputs();
 
-    // Call hide() on the previous view in the stack if no
-    // views are translucent, then call show() once the animation ends
     View* last = nullptr;
     if (Application::viewStack.size() > 0)
         last = Application::viewStack[Application::viewStack.size() - 1];
 
-    bool fadeOut = last && !last->isTranslucent() && !view->isTranslucent(); // play the fade out animation?
-    bool wait    = animation == ViewAnimation::FADE; // wait for the old view animation to be done before showing the new one?
+    bool fadeOut = last && !last->isTranslucent() && !view->isTranslucent();
+    bool wait    = animation == ViewAnimation::FADE;
 
     view->registerAction("brls/hints/exit"_i18n, Key::PLUS, [] { Application::quit(); return true; });
     view->registerAction(
         "FPS", Key::MINUS, [] { Application::toggleFramerateDisplay(); return true; }, true);
 
-    // Fade out animation
     if (fadeOut)
     {
-        view->setForceTranslucent(true); // set the new view translucent until the fade out animation is done playing
+        view->setForceTranslucent(true);
 
-        // Animate the new view directly
         if (!wait)
         {
             view->show([]() {
@@ -818,8 +1341,6 @@ void Application::pushView(View* view, ViewAnimation animation)
             View* newLast = Application::viewStack[Application::viewStack.size() - 1];
             newLast->setForceTranslucent(false);
 
-            // Animate the new view once the old one
-            // has ended its animation
             if (wait)
                 newLast->show([]() { Application::unblockInputs(); }, true, animation);
         },
@@ -833,19 +1354,16 @@ void Application::pushView(View* view, ViewAnimation animation)
     else
         view->alpha = 0.0f;
 
-    // Focus
     if (Application::viewStack.size() > 0 && Application::currentFocus != nullptr)
     {
         Logger::debug("Pushing {} to the focus stack", Application::currentFocus->describe());
         Application::focusStack.push_back(Application::currentFocus);
     }
 
-    // Layout and prepare view
     view->invalidate(true);
     view->willAppear(true);
     Application::giveFocus(view->getDefaultFocus());
 
-    // And push it
     Application::viewStack.push_back(view);
 }
 
@@ -973,7 +1491,6 @@ FramerateCounter::FramerateCounter()
 
 void FramerateCounter::frame(FrameContext* ctx)
 {
-    // Update counter
     retro_time_t current = cpu_features_get_time_usec() / 1000;
 
     if (current - this->lastSecond >= 1000)
@@ -981,7 +1498,7 @@ void FramerateCounter::frame(FrameContext* ctx)
         char fps[10];
         snprintf(fps, sizeof(fps), "FPS: %03d", this->frames);
         this->setText(std::string(fps));
-        this->invalidate(); // update width for background
+        this->invalidate();
 
         this->frames     = 0;
         this->lastSecond = current;
@@ -989,7 +1506,6 @@ void FramerateCounter::frame(FrameContext* ctx)
 
     this->frames++;
 
-    // Regular frame
     Label::frame(ctx);
 }
 

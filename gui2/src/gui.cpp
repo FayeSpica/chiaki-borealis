@@ -2,9 +2,13 @@
 
 #include "gui.h"
 #include <chiaki/log.h>
+#include <chrono>
 
 #define SCREEN_W 1280
 #define SCREEN_H 720
+
+// Exit confirmation state
+static bool exitDialogOpen = false;
 
 // TODO
 using namespace brls::i18n::literals; // for _i18n
@@ -292,6 +296,26 @@ bool MainApplication::Load()
 	this->rootFrame->addTab("Add Host", add_host);
 	// ----------------
 	this->rootFrame->addSeparator();
+
+	// BACK on root view shows exit confirmation dialog
+	this->rootFrame->registerAction("Back", brls::Key::B, [this]() {
+		if (exitDialogOpen)
+			return true;
+		exitDialogOpen = true;
+		brls::Dialog *dialog = new brls::Dialog("Are you sure you want to exit Chiaki?");
+		dialog->addButton("Cancel", [dialog](brls::View *view) {
+			exitDialogOpen = false;
+			dialog->close();
+		});
+		dialog->addButton("Exit", [dialog](brls::View *view) {
+			dialog->close([]() {
+				brls::Application::quit();
+			});
+		});
+		dialog->setCancelable(true);
+		dialog->open();
+		return true;
+	});
 
 	// Add the root view to the stack
 	brls::Application::pushView(this->rootFrame);

@@ -19,6 +19,40 @@
 // use OpenGl to decode YUV
 // the aim is to spare CPU load on nintendo switch
 
+#ifdef ANDROID
+static const char *shader_vert_glsl = R"glsl(
+#version 300 es
+in vec2 pos_attr;
+out vec2 uv_var;
+void main()
+{
+	uv_var = pos_attr;
+	gl_Position = vec4(pos_attr * vec2(2.0, -2.0) + vec2(-1.0, 1.0), 0.0, 1.0);
+}
+)glsl";
+
+static const char *yuv420p_shader_frag_glsl = R"glsl(
+#version 300 es
+precision mediump float;
+uniform sampler2D plane1; // Y
+uniform sampler2D plane2; // U
+uniform sampler2D plane3; // V
+in vec2 uv_var;
+out vec4 out_color;
+void main()
+{
+	vec3 yuv = vec3(
+		(texture(plane1, uv_var).r - (16.0 / 255.0)) / ((235.0 - 16.0) / 255.0),
+		(texture(plane2, uv_var).r - (16.0 / 255.0)) / ((240.0 - 16.0) / 255.0) - 0.5,
+		(texture(plane3, uv_var).r - (16.0 / 255.0)) / ((240.0 - 16.0) / 255.0) - 0.5);
+	vec3 rgb = mat3(
+		1.0,		1.0,		1.0,
+		0.0,		-0.21482,	2.12798,
+		1.28033,	-0.38059,	0.0) * yuv;
+	out_color = vec4(rgb, 1.0);
+}
+)glsl";
+#else
 static const char *shader_vert_glsl = R"glsl(
 #version 150 core
 in vec2 pos_attr;
@@ -50,6 +84,7 @@ void main()
 	out_color = vec4(rgb, 1.0);
 }
 )glsl";
+#endif
 
 static const float vert_pos[] = {
 	0.0f, 0.0f,
@@ -169,6 +204,19 @@ void IO::DumpProgramError(GLuint prog, const char *func, const char *file, int l
 	}
 #endif
 
+#if !CHIAKI_ENABLE_FFMPEG_DECODER
+bool IO::VideoCB(uint8_t *buf, size_t buf_size)
+{
+	CHIAKI_LOGW(this->log, "VideoCB called but FFMPEG decoder is disabled");
+	return false;
+}
+
+bool IO::InitAVCodec()
+{
+	CHIAKI_LOGW(this->log, "InitAVCodec called but FFMPEG decoder is disabled");
+	return true; // return true to not block init
+}
+#else
 bool IO::VideoCB(uint8_t *buf, size_t buf_size)
 {
 	// callback function to decode video buffer
@@ -227,6 +275,7 @@ send_packet:
 	av_packet_unref(&packet);
 	return true;
 }
+#endif // CHIAKI_ENABLE_FFMPEG_DECODER (VideoCB)
 
 void IO::InitAudioCB(unsigned int channels, unsigned int rate)
 {
@@ -308,17 +357,23 @@ bool IO::InitVideo(int video_width, int video_height, int screen_width, int scre
 
 	this->screen_width = screen_width;
 	this->screen_height = screen_height;
+#if CHIAKI_ENABLE_FFMPEG_DECODER
 	this->frame = av_frame_alloc();
 
 	if(!InitAVCodec())
 	{
 		throw Exception("Failed to initiate libav codec");
 	}
+#endif
 
+#if CHIAKI_ENABLE_FFMPEG_DECODER
 	if(!InitOpenGl())
 	{
 		throw Exception("Failed to initiate OpenGl");
 	}
+#else
+	CHIAKI_LOGW(this->log, "Skipping OpenGL init (no ffmpeg decoder)");
+#endif
 	return true;
 }
 
@@ -326,6 +381,7 @@ bool IO::FreeVideo()
 {
 	bool ret = true;
 
+#if CHIAKI_ENABLE_FFMPEG_DECODER
 	if(this->frame)
 		av_frame_free(&this->frame);
 
@@ -335,6 +391,7 @@ bool IO::FreeVideo()
 		avcodec_close(this->codec_context);
 		avcodec_free_context(&this->codec_context);
 	}
+#endif
 
 	return ret;
 }
@@ -704,6 +761,7 @@ bool IO::ReadGameKeys(SDL_Event *event, ChiakiControllerState *state)
 	return ret;
 }
 
+#if CHIAKI_ENABLE_FFMPEG_DECODER
 bool IO::InitAVCodec()
 {
 	CHIAKI_LOGV(this->log, "loading AVCodec");
@@ -732,6 +790,7 @@ bool IO::InitAVCodec()
 	}
 	return true;
 }
+#endif // CHIAKI_ENABLE_FFMPEG_DECODER
 
 bool IO::InitOpenGl()
 {
@@ -843,6 +902,7 @@ bool IO::InitOpenGlShader()
 	return true;
 }
 
+#if CHIAKI_ENABLE_FFMPEG_DECODER
 inline void IO::SetOpenGlYUVPixels(AVFrame *frame)
 {
 	D(glUseProgram(this->prog));
@@ -896,13 +956,16 @@ inline void IO::SetOpenGlYUVPixels(AVFrame *frame)
 	this->mtx.unlock();
 	glFinish();
 }
+#endif // CHIAKI_ENABLE_FFMPEG_DECODER (SetOpenGlYUVPixels)
 
 inline void IO::OpenGlDraw()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// send to OpenGl
+#if CHIAKI_ENABLE_FFMPEG_DECODER
 	SetOpenGlYUVPixels(this->frame);
+#endif
 
 	//avcodec_flush_buffers(this->codec_context);
 	D(glBindVertexArray(this->vao));

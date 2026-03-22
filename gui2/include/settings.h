@@ -19,7 +19,9 @@ class Settings
 		static Settings * instance;
 
 	private:
-		const char * filename = "chiaki.conf";
+		std::string config_dir;
+		std::string config_path;
+		const char * filename;
 		ChiakiLog log;
 		std::map<std::string, Host> hosts;
 

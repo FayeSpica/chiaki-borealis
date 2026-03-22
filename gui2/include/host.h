@@ -10,7 +10,9 @@
 #include <chiaki/controller.h>
 #include <chiaki/discovery.h>
 #include <chiaki/log.h>
+#if CHIAKI_LIB_ENABLE_OPUS
 #include <chiaki/opusdecoder.h>
+#endif
 #include <chiaki/regist.h>
 
 #include "exception.h"
@@ -86,7 +88,9 @@ class Host
 		// manage stream session
 		bool session_init = false;
 		ChiakiSession session;
+#if CHIAKI_LIB_ENABLE_OPUS
 		ChiakiOpusDecoder opus_decoder;
+#endif
 		ChiakiConnectVideoProfile video_profile;
 		friend class Settings;
 		friend class DiscoveryManager;

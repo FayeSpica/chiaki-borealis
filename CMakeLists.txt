@@ -126,6 +126,10 @@ endif()
 
 add_subdirectory(lib)
 
+if(CHIAKI_ENABLE_ANDROID)
+	add_subdirectory(android/app)
+endif()
+
 if(CHIAKI_ENABLE_CLI)
 	add_subdirectory(cli)
 endif()

@@ -17,6 +17,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <borealis/application.hpp>
 #include <borealis/logger.hpp>
 #include <borealis/swkbd.hpp>
 #include <cstring>
@@ -24,6 +25,10 @@
 
 #ifdef __SWITCH__
 #include <switch.h>
+#endif
+
+#ifdef __SDL2__
+#include <SDL.h>
 #endif
 
 namespace brls
@@ -56,40 +61,39 @@ int getSwkbdKeyDisableBitmask(int borealis_key)
         return 0;
 
     if (borealis_key & brls::KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_SPACE)
-        // Disable space-bar
         ret |= SwkbdKeyDisableBitmask_Space;
 
     if (borealis_key & brls::KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_AT)
-        // Disable '@'.
         ret |= SwkbdKeyDisableBitmask_At;
 
     if (borealis_key & brls::KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_PERCENT)
-        // Disable '%'.
         ret |= SwkbdKeyDisableBitmask_Percent;
 
     if (borealis_key & brls::KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_FORWSLASH)
-        // Disable '/'.
         ret |= SwkbdKeyDisableBitmask_ForwardSlash;
 
     if (borealis_key & brls::KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_BACKSLASH)
-        // Disable '\'.
         ret |= SwkbdKeyDisableBitmask_Backslash;
 
     if (borealis_key & brls::KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_NUMBERS)
-        // Disable numbers.
         ret |= SwkbdKeyDisableBitmask_Numbers;
 
     if (borealis_key & brls::KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_DOWNLOADCODE)
-        // Used for swkbdConfigMakePresetDownloadCode.
         ret |= SwkbdKeyDisableBitmask_DownloadCode;
 
     if (borealis_key & brls::KeyboardKeyDisableBitmask::KEYBOARD_DISABLE_USERNAME)
-        // Used for swkbdConfigMakePresetUserName. Disables '@', '%', and '\'.
         ret |= SwkbdKeyDisableBitmask_UserName;
 
     return ret;
 }
+
+#elif defined(__SDL2__) && defined(ANDROID)
+
+// Android: non-blocking text input via Application::startTextInput
+// Text input is handled in the borealis main loop
+
 #else
+
 static std::string terminalInput(std::string text)
 {
     printf("\033[0;94m[INPUT] \033[0;36m%s\033[0m: ", text.c_str());
@@ -97,6 +101,7 @@ static std::string terminalInput(std::string text)
     std::getline(std::cin, line);
     return line;
 }
+
 #endif
 
 bool Swkbd::openForText(std::function<void(std::string)> f, std::string headerText, std::string subText, int maxStringLength, std::string initialText, int kbdDisableBitmask)
@@ -120,6 +125,9 @@ bool Swkbd::openForText(std::function<void(std::string)> f, std::string headerTe
     swkbdClose(&config);
 
     return false;
+#elif defined(__SDL2__) && defined(ANDROID)
+    Application::startTextInput(headerText, initialText, maxStringLength, f);
+    return true;
 #else
     std::string line = terminalInput(headerText);
     f(line);
@@ -150,6 +158,15 @@ bool Swkbd::openForNumber(std::function<void(int)> f, std::string headerText, st
     swkbdClose(&config);
 
     return false;
+#elif defined(__SDL2__) && defined(ANDROID)
+    Application::startTextInput(headerText, initialText, maxStringLength, [f](std::string text) {
+        try {
+            f(std::stol(text));
+        } catch (const std::exception& e) {
+            Logger::error("Could not parse input: {}", e.what());
+        }
+    });
+    return true;
 #else
     std::string line = terminalInput(headerText);
 

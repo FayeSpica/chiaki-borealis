@@ -16,6 +16,7 @@ import com.metallic.chiaki.R
 import com.metallic.chiaki.common.DiscoveredDisplayHost
 import com.metallic.chiaki.common.DisplayHost
 import com.metallic.chiaki.common.ManualDisplayHost
+import com.metallic.chiaki.common.TvUtils
 import com.metallic.chiaki.common.ext.inflate
 import com.metallic.chiaki.databinding.ItemDisplayHostBinding
 import com.metallic.chiaki.lib.DiscoveryHost
@@ -91,6 +92,16 @@ class DisplayHostRecyclerViewAdapter(
 				}
 			)
 			it.root.setOnClickListener { clickCallback(host) }
+
+			// TV D-pad focus: scale up on focus for visual feedback
+			it.root.setOnFocusChangeListener { v, hasFocus ->
+				val scale = if(hasFocus) 1.05f else 1.0f
+				v.animate().scaleX(scale).scaleY(scale).setDuration(150).start()
+				if(hasFocus)
+					v.elevation = 16f
+				else
+					v.elevation = 8f
+			}
 
 			val canWakeup = host.registeredHost != null
 			val canEditDelete = host is ManualDisplayHost

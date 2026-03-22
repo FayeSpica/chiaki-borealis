@@ -5,6 +5,7 @@ package com.metallic.chiaki.main
 import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity()
 
 	private lateinit var binding: ActivityMainBinding
 	private var discoveryMenuItem: MenuItem? = null
+	private val isTv by lazy { TvUtils.isTV(this) }
 
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
@@ -41,18 +43,28 @@ class MainActivity : AppCompatActivity()
 		title = ""
 		setSupportActionBar(binding.toolbar)
 
-		binding.floatingActionButton.setOnClickListener {
-			expandFloatingActionButton(!binding.floatingActionButton.isExpanded)
+		if(isTv)
+		{
+			// Hide FAB on TV - use menu items instead for D-pad navigation
+			binding.floatingActionButton.visibility = View.GONE
+			binding.floatingActionButtonDialBackground.visibility = View.GONE
+			binding.floatingActionButtonDial.visibility = View.GONE
 		}
-		binding.floatingActionButtonDialBackground.setOnClickListener {
-			expandFloatingActionButton(false)
+		else
+		{
+			binding.floatingActionButton.setOnClickListener {
+				expandFloatingActionButton(!binding.floatingActionButton.isExpanded)
+			}
+			binding.floatingActionButtonDialBackground.setOnClickListener {
+				expandFloatingActionButton(false)
+			}
+
+			binding.addManualButton.setOnClickListener { addManualConsole() }
+			binding.addManualLabelButton.setOnClickListener { addManualConsole() }
+
+			binding.registerButton.setOnClickListener { showRegistration() }
+			binding.registerLabelButton.setOnClickListener { showRegistration() }
 		}
-
-		binding.addManualButton.setOnClickListener { addManualConsole() }
-		binding.addManualLabelButton.setOnClickListener { addManualConsole() }
-
-		binding.registerButton.setOnClickListener { showRegistration() }
-		binding.registerLabelButton.setOnClickListener { showRegistration() }
 
 		viewModel = ViewModelProvider(this, viewModelFactory { MainViewModel(getDatabase(this), Preferences(this)) })
 			.get(MainViewModel::class.java)
@@ -107,7 +119,7 @@ class MainActivity : AppCompatActivity()
 
 	override fun onBackPressed()
 	{
-		if(binding.floatingActionButton.isExpanded)
+		if(!isTv && binding.floatingActionButton.isExpanded)
 		{
 			expandFloatingActionButton(false)
 			return
@@ -139,6 +151,18 @@ class MainActivity : AppCompatActivity()
 			true
 		}
 
+		R.id.action_register ->
+		{
+			showRegistration()
+			true
+		}
+
+		R.id.action_add_manual ->
+		{
+			addManualConsole()
+			true
+		}
+
 		R.id.action_settings ->
 		{
 			Intent(this, SettingsActivity::class.java).also {
@@ -153,16 +177,26 @@ class MainActivity : AppCompatActivity()
 	private fun addManualConsole()
 	{
 		Intent(this, EditManualConsoleActivity::class.java).also {
-			it.putRevealExtra(binding.addManualButton, binding.rootLayout)
-			startActivity(it, ActivityOptions.makeSceneTransitionAnimation(this).toBundle())
+			if(isTv)
+				startActivity(it)
+			else
+			{
+				it.putRevealExtra(binding.addManualButton, binding.rootLayout)
+				startActivity(it, ActivityOptions.makeSceneTransitionAnimation(this).toBundle())
+			}
 		}
 	}
 
 	private fun showRegistration()
 	{
 		Intent(this, RegistActivity::class.java).also {
-			it.putRevealExtra(binding.registerButton, binding.rootLayout)
-			startActivity(it, ActivityOptions.makeSceneTransitionAnimation(this).toBundle())
+			if(isTv)
+				startActivity(it)
+			else
+			{
+				it.putRevealExtra(binding.registerButton, binding.rootLayout)
+				startActivity(it, ActivityOptions.makeSceneTransitionAnimation(this).toBundle())
+			}
 		}
 	}
 

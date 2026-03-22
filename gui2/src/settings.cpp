@@ -42,6 +42,23 @@ Settings *Settings::GetInstance()
 	if(instance == nullptr)
 	{
 		instance = new Settings;
+#ifdef ANDROID
+		const char* cfgDir = getenv("CHIAKI_CONFIG_DIR");
+		if(cfgDir)
+		{
+			instance->config_dir = cfgDir;
+			instance->config_path = std::string(cfgDir) + "chiaki.conf";
+		}
+		else
+		{
+			instance->config_dir = "/data/local/tmp/";
+			instance->config_path = "/data/local/tmp/chiaki.conf";
+		}
+		instance->filename = instance->config_path.c_str();
+#else
+		instance->config_path = "chiaki.conf";
+		instance->filename = instance->config_path.c_str();
+#endif
 		instance->ParseFile();
 	}
 	return instance;
@@ -459,7 +476,7 @@ std::string Settings::GetHostRPKey(Host *host)
 		if(host->rp_key_data || host->registered)
 		{
 			size_t rp_key_b64_sz = this->GetB64encodeSize(0x10);
-			char rp_key_b64[rp_key_b64_sz + 1] = { 0 };
+			char rp_key_b64[128] = { 0 }; // max base64 of 16 bytes
 			ChiakiErrorCode err;
 			err = chiaki_base64_encode(
 				host->rp_key, 0x10,
@@ -503,7 +520,7 @@ std::string Settings::GetHostRPRegistKey(Host *host)
 		if(host->rp_key_data || host->registered)
 		{
 			size_t rp_regist_key_b64_sz = this->GetB64encodeSize(CHIAKI_SESSION_AUTH_SIZE);
-			char rp_regist_key_b64[rp_regist_key_b64_sz + 1] = { 0 };
+			char rp_regist_key_b64[512] = { 0 }; // max base64 of auth size
 			ChiakiErrorCode err;
 			err = chiaki_base64_encode(
 				(uint8_t *)host->rp_regist_key, CHIAKI_SESSION_AUTH_SIZE,

@@ -19,10 +19,21 @@
 
 #pragma once
 
+#ifdef ANDROID
+#include <string>
+#include <cstdlib>
+inline std::string _brls_asset_path(const std::string& rel) {
+    const char* base = getenv("BOREALIS_RESOURCES");
+    if (base) return std::string(base) + rel;
+    return std::string(BOREALIS_RESOURCES) + rel;
+}
+#define BOREALIS_ASSET(_str) _brls_asset_path(_str).c_str()
+#else
 #ifndef BOREALIS_RESOURCES
 #error BOREALIS_RESOURCES define missing
 #endif
 #define BOREALIS_ASSET(_str) BOREALIS_RESOURCES _str
+#endif
 
 // Library
 #include <borealis/absolute_layout.hpp>

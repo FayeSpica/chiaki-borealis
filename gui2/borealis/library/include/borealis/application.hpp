@@ -19,8 +19,18 @@
 
 #pragma once
 
+#ifdef __SDL2__
+#include <SDL.h>
+#ifdef ANDROID
+#include <GLES3/gl3.h>
+#else
+#include <glad/glad.h>
+#endif
+#else
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#endif
+
 #include <nanovg/nanovg.h>
 
 #include <borealis/animations.hpp>
@@ -36,6 +46,33 @@
 #include <borealis/view.hpp>
 #include <map>
 #include <vector>
+
+// SDL2 gamepad button constants matching GLFW layout for borealis compatibility
+#ifdef __SDL2__
+#define BRLS_GAMEPAD_BUTTON_A             0
+#define BRLS_GAMEPAD_BUTTON_B             1
+#define BRLS_GAMEPAD_BUTTON_X             2
+#define BRLS_GAMEPAD_BUTTON_Y             3
+#define BRLS_GAMEPAD_BUTTON_LEFT_BUMPER   4
+#define BRLS_GAMEPAD_BUTTON_RIGHT_BUMPER  5
+#define BRLS_GAMEPAD_BUTTON_BACK          6
+#define BRLS_GAMEPAD_BUTTON_START         7
+#define BRLS_GAMEPAD_BUTTON_GUIDE         8
+#define BRLS_GAMEPAD_BUTTON_LEFT_THUMB    9
+#define BRLS_GAMEPAD_BUTTON_RIGHT_THUMB   10
+#define BRLS_GAMEPAD_BUTTON_DPAD_UP       11
+#define BRLS_GAMEPAD_BUTTON_DPAD_RIGHT    12
+#define BRLS_GAMEPAD_BUTTON_DPAD_DOWN     13
+#define BRLS_GAMEPAD_BUTTON_DPAD_LEFT     14
+#define BRLS_GAMEPAD_BUTTON_LAST          14
+#define BRLS_PRESS   1
+#define BRLS_RELEASE 0
+
+struct BrlsGamepadState {
+    unsigned char buttons[15] = {};
+    float axes[6] = {};
+};
+#endif
 
 namespace brls
 {
@@ -132,7 +169,7 @@ class Application
 
     static void setMaximumFPS(unsigned fps);
 
-    // public so that the glfw callback can access it
+    // public so that callbacks can access it
     inline static unsigned contentWidth, contentHeight;
     inline static float windowScale;
 
@@ -153,7 +190,31 @@ class Application
     static void cleanupNvgGlState();
 
   private:
+#ifdef __SDL2__
+    inline static SDL_Window* window;
+    inline static SDL_GLContext glContext;
+    inline static bool shouldClose = false;
+    inline static BrlsGamepadState oldGamepad;
+    inline static BrlsGamepadState gamepad;
+    inline static SDL_GameController* sdlController = nullptr;
+
+    // Text input state for Android Swkbd integration
+    inline static bool textInputActive = false;
+    inline static std::string textInputBuffer;
+    inline static std::string textInputHeader;
+    inline static int textInputMaxLength = 256;
+    inline static std::function<void(std::string)> textInputCallback;
+    inline static class Dialog* textInputDialog = nullptr;
+  public:
+    static void startTextInput(const std::string& header, const std::string& initial, int maxLen, std::function<void(std::string)> cb);
+    static void stopTextInput(bool submit);
+    static bool isTextInputActive() { return textInputActive; }
+  private:
+#else
     inline static GLFWwindow* window;
+    inline static GLFWgamepadstate oldGamepad;
+    inline static GLFWgamepadstate gamepad;
+#endif
     inline static NVGcontext* vg;
 
     inline static std::string title;
@@ -174,9 +235,6 @@ class Application
 
     inline static LibraryViewsThemeVariantsWrapper* currentThemeVariantsWrapper;
     inline static ThemeVariant currentThemeVariant;
-
-    inline static GLFWgamepadstate oldGamepad;
-    inline static GLFWgamepadstate gamepad;
 
     inline static Style* currentStyle;
 

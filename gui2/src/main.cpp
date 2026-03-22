@@ -122,12 +122,24 @@ int start() {
 		return 1;
 	}
 
+#ifdef ANDROID
+	// On Android with SDL2 backend, SDL is initialized by borealis Application::init()
+	// Only init audio/joystick/gamecontroller subsystems here
+	CHIAKI_LOGI(log, "Loading SDL audio / joystick / haptic (Android)");
+	if(SDL_InitSubSystem(SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER))
+	{
+		CHIAKI_LOGE(log, "SDL subsystem initialization failed: %s", SDL_GetError());
+		return 1;
+	}
+	SDL_SetHint(SDL_HINT_ANDROID_TRAP_BACK_BUTTON, "1");
+#else
 	CHIAKI_LOGI(log, "Loading SDL audio / joystick / haptic");
 	if(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER))
 	{
 		CHIAKI_LOGE(log, "SDL initialization failed: %s", SDL_GetError());
 		return 1;
 	}
+#endif
 
 	// build sdl OpenGl and AV decoders graphical interface
 	DiscoveryManager discoverymanager = DiscoveryManager();

@@ -137,7 +137,9 @@ int Host::InitSession(IO *user)
 	chiaki_connect_video_profile_preset(&(this->video_profile),
 		this->video_resolution, this->video_fps);
 	// Build chiaki ps4 stream session
+#if CHIAKI_LIB_ENABLE_OPUS
 	chiaki_opus_decoder_init(&(this->opus_decoder), this->log);
+#endif
 	ChiakiAudioSink audio_sink;
 	ChiakiConnectInfo chiaki_connect_info = {};
 
@@ -155,9 +157,11 @@ int Host::InitSession(IO *user)
 		throw Exception(chiaki_error_string(err));
 	this->session_init = true;
 	// audio setting_cb and frame_cb
+#if CHIAKI_LIB_ENABLE_OPUS
 	chiaki_opus_decoder_set_cb(&this->opus_decoder, InitAudioCB, AudioCB, user);
 	chiaki_opus_decoder_get_sink(&this->opus_decoder, &audio_sink);
 	chiaki_session_set_audio_sink(&this->session, &audio_sink);
+#endif
 	chiaki_session_set_video_sample_cb(&this->session, VideoCB, user);
 	chiaki_session_set_event_cb(&this->session, EventCB, this);
 
@@ -174,7 +178,9 @@ int Host::FiniSession()
 		this->session_init = false;
 		chiaki_session_join(&this->session);
 		chiaki_session_fini(&this->session);
+#if CHIAKI_LIB_ENABLE_OPUS
 		chiaki_opus_decoder_fini(&this->opus_decoder);
+#endif
 	}
 	return 0;
 }

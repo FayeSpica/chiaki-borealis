@@ -30,6 +30,7 @@ android {
                 arguments "-DCHIAKI_ENABLE_TESTS=OFF",
                         "-DCHIAKI_ENABLE_CLI=OFF",
                         "-DCHIAKI_ENABLE_GUI=OFF",
+                        "-DCHIAKI_ENABLE_GUI2=OFF",
                         "-DCHIAKI_ENABLE_SETSU=OFF",
                         "-DCHIAKI_ENABLE_ANDROID=ON",
                         "-DCHIAKI_ENABLE_FFMPEG_DECODER=OFF",
@@ -100,6 +101,7 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'androidx.preference:preference:1.2.0'
     implementation 'com.google.android.material:material:1.8.0'
+    implementation 'androidx.leanback:leanback:1.0.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1'
     implementation 'androidx.lifecycle:lifecycle-reactivestreams:2.5.1'

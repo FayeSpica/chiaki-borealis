@@ -21,8 +21,30 @@
 #include <functional>
 #include <string>
 
+#ifdef __SDL2__
+// Button constants matching GLFW layout for borealis compatibility
+// These must match the values in application.hpp's BRLS_GAMEPAD_BUTTON_* defines
+enum {
+    _BRLS_KEY_A             = 0,
+    _BRLS_KEY_B             = 1,
+    _BRLS_KEY_X             = 2,
+    _BRLS_KEY_Y             = 3,
+    _BRLS_KEY_LEFT_BUMPER   = 4,
+    _BRLS_KEY_RIGHT_BUMPER  = 5,
+    _BRLS_KEY_BACK          = 6,
+    _BRLS_KEY_START         = 7,
+    _BRLS_KEY_GUIDE         = 8,
+    _BRLS_KEY_LEFT_THUMB    = 9,
+    _BRLS_KEY_RIGHT_THUMB   = 10,
+    _BRLS_KEY_DPAD_UP       = 11,
+    _BRLS_KEY_DPAD_RIGHT    = 12,
+    _BRLS_KEY_DPAD_DOWN     = 13,
+    _BRLS_KEY_DPAD_LEFT     = 14,
+};
+#else
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#endif
 
 namespace brls
 {
@@ -34,6 +56,22 @@ typedef std::function<bool(void)> ActionListener;
 // ZL and ZR do not exist here because GLFW doesn't know them
 enum class Key
 {
+#ifdef __SDL2__
+    A      = _BRLS_KEY_A,
+    B      = _BRLS_KEY_B,
+    X      = _BRLS_KEY_X,
+    Y      = _BRLS_KEY_Y,
+    LSTICK = _BRLS_KEY_LEFT_THUMB,
+    RSTICK = _BRLS_KEY_RIGHT_THUMB,
+    L      = _BRLS_KEY_LEFT_BUMPER,
+    R      = _BRLS_KEY_RIGHT_BUMPER,
+    PLUS   = _BRLS_KEY_START,
+    MINUS  = _BRLS_KEY_BACK,
+    DLEFT  = _BRLS_KEY_DPAD_LEFT,
+    DUP    = _BRLS_KEY_DPAD_UP,
+    DRIGHT = _BRLS_KEY_DPAD_RIGHT,
+    DDOWN  = _BRLS_KEY_DPAD_DOWN,
+#else
     A      = GLFW_GAMEPAD_BUTTON_A,
     B      = GLFW_GAMEPAD_BUTTON_B,
     X      = GLFW_GAMEPAD_BUTTON_X,
@@ -48,6 +86,7 @@ enum class Key
     DUP    = GLFW_GAMEPAD_BUTTON_DPAD_UP,
     DRIGHT = GLFW_GAMEPAD_BUTTON_DPAD_RIGHT,
     DDOWN  = GLFW_GAMEPAD_BUTTON_DPAD_DOWN,
+#endif
 };
 
 struct Action

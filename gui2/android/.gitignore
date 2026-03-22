@@ -1,0 +1,12 @@
+.gradle/
+.cxx/
+build/
+local.properties
+app/build/
+app/.cxx/
+app/libs/
+*.apk
+*.iml
+.idea/
+app/jni/openssl-android/
+app/jni/SDL

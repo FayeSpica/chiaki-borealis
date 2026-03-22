@@ -7,7 +7,11 @@
 #include <cstdint>
 #include <functional>
 
+#ifdef ANDROID
+#include <GLES3/gl3.h>
+#else
 #include <glad.h> // glad library (OpenGL loader)
+#endif
 
 #include <chiaki/session.h>
 
@@ -37,12 +41,14 @@ Reproducible: False
 #include <mutex>
 #include <map>
 
+#if CHIAKI_ENABLE_FFMPEG_DECODER
 extern "C"
 {
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
 }
+#endif
 
 #include <chiaki/controller.h>
 #include <chiaki/log.h>
@@ -67,9 +73,15 @@ class IO
 		// default nintendo switch res
 		int screen_width = 1280;
 		int screen_height = 720;
+#if CHIAKI_ENABLE_FFMPEG_DECODER
         const AVCodec *codec;
 		AVCodecContext *codec_context;
 		AVFrame *frame;
+#else
+		void *codec = nullptr;
+		void *codec_context = nullptr;
+		void *frame = nullptr;
+#endif
 		SDL_AudioDeviceID sdl_audio_device_id = 0;
 		SDL_Event sdl_event;
         SDL_GameController *sdl_joystick_ptr[SDL_JOYSTICK_COUNT] = {0};
@@ -96,7 +108,9 @@ class IO
 		void DumpProgramError(GLuint prog, const char *func, const char *file, int line);
 #endif
 		GLuint CreateAndCompileShader(GLenum type, const char *source);
+#if CHIAKI_ENABLE_FFMPEG_DECODER
 		void SetOpenGlYUVPixels(AVFrame *frame);
+#endif
 		bool ReadGameKeys(SDL_Event *event, ChiakiControllerState *state);
 		bool ReadGameTouchScreen(ChiakiControllerState *state, std::map<uint32_t, int8_t> *finger_id_touch_id);
 		bool ReadGameSixAxis(ChiakiControllerState *state);
