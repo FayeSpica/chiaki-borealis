@@ -50,23 +50,32 @@ public class ChiakiActivity extends SDLActivity {
     public static void showTextInputDialog(String title, String initialText, int maxLength) {
         final SDLActivity activity = (SDLActivity) SDLActivity.getContext();
         activity.runOnUiThread(() -> {
+            // EditText with dark styling
             final EditText editText = new EditText(activity);
             editText.setText(initialText);
             editText.setSelection(initialText.length());
             editText.setHint(title);
             editText.setTextColor(0xFFFFFFFF);
-            editText.setHintTextColor(0xFF888888);
-            editText.setBackgroundColor(0xFF2D2D2D);
-            editText.setPadding(32, 24, 32, 24);
+            editText.setHintTextColor(0xFF666666);
+            editText.setTextSize(18);
+
+            // Rounded dark background for EditText
+            android.graphics.drawable.GradientDrawable editBg = new android.graphics.drawable.GradientDrawable();
+            editBg.setColor(0xFF3D3D3D);
+            editBg.setCornerRadius(12);
+            editText.setBackground(editBg);
+            editText.setPadding(40, 32, 40, 32);
+
             if (maxLength > 0) {
                 editText.setFilters(new android.text.InputFilter[]{
                     new android.text.InputFilter.LengthFilter(maxLength)
                 });
             }
 
+            // Container
             FrameLayout container = new FrameLayout(activity);
-            container.setBackgroundColor(0xFF1A1A2E);
-            container.setPadding(48, 32, 48, 32);
+            container.setPadding(32, 24, 32, 8);
+
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
@@ -88,12 +97,19 @@ public class ChiakiActivity extends SDLActivity {
                 })
                 .create();
 
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            if (dialog.getWindow() != null) {
+                android.graphics.drawable.GradientDrawable winBg = new android.graphics.drawable.GradientDrawable();
+                winBg.setColor(0xFF2D2D2D);
+                winBg.setCornerRadius(20);
+                dialog.getWindow().setBackgroundDrawable(winBg);
+            }
             dialog.show();
 
-            // Style buttons to match dark theme
+            // Style buttons
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF00E68A);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF888888);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextSize(16);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF999999);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextSize(16);
 
             editText.requestFocus();
         });
