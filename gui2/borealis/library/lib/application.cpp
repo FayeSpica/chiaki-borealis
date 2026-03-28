@@ -591,8 +591,19 @@ void Application::startTextInput(const std::string& header, const std::string& i
     Application::textInputMaxLength = maxLen;
     Application::textInputCallback = cb;
 
-    // Show a dialog with current input text
-    Application::updateTextInputDialog();
+    // Build display text
+    std::string displayText = header + "\n\n> " + initial + "_";
+
+    auto* dialog = new Dialog(displayText);
+    dialog->setCancelable(false);
+    dialog->addButton("Cancel", [](View* view) {
+        Application::stopTextInput(false);
+    });
+    dialog->addButton("OK", [](View* view) {
+        Application::stopTextInput(true);
+    });
+    dialog->open();
+    Application::textInputDialog = dialog;
 
     SDL_Rect rect = {0, 360, 1280, 360};
     SDL_SetTextInputRect(&rect);
@@ -606,7 +617,7 @@ void Application::stopTextInput(bool submit)
     SDL_StopTextInput();
     Application::textInputActive = false;
 
-    // Close the dialog first
+    // Close the dialog
     if (Application::textInputDialog)
     {
         Application::textInputDialog->close();
@@ -630,27 +641,9 @@ void Application::stopTextInput(bool submit)
 
 void Application::updateTextInputDialog()
 {
-    // Close previous dialog
-    if (Application::textInputDialog)
-    {
-        Application::textInputDialog->close();
-        Application::textInputDialog = nullptr;
-    }
-
-    // Build display text
-    std::string displayText = Application::textInputHeader + "\n\n";
-    displayText += "> " + Application::textInputBuffer + "_";
-
-    auto* dialog = new Dialog(displayText);
-    dialog->setCancelable(false);
-    dialog->addButton("Cancel", [](View* view) {
-        Application::stopTextInput(false);
-    });
-    dialog->addButton("OK", [](View* view) {
-        Application::stopTextInput(true);
-    });
-    dialog->open();
-    Application::textInputDialog = dialog;
+    // Just notify with current text - don't recreate dialog
+    // The dialog stays open, we show progress via notification
+    Application::notify("> " + Application::textInputBuffer + "_");
 }
 
 #else // GLFW backend
