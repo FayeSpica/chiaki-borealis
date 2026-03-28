@@ -210,6 +210,7 @@ class Application
     static void stopTextInput(bool submit);
     static void updateTextInputDialog();
     static bool isTextInputActive() { return textInputActive; }
+    static void onTextInputResult(const std::string& text, bool submitted);
   private:
 #else
     inline static GLFWwindow* window;

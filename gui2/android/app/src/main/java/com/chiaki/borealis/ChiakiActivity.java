@@ -2,10 +2,13 @@
 
 package com.chiaki.borealis;
 
+import android.app.AlertDialog;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 
 import org.libsdl.app.SDL;
 import org.libsdl.app.SDLActivity;
@@ -20,19 +23,18 @@ public class ChiakiActivity extends SDLActivity {
 
     private static final String TAG = "chiaki-borealis";
 
+    // Native callback for text input result
+    public static native void nativeTextInputResult(String text, boolean submitted);
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Extract assets before SDL starts (SDL_main needs resources)
         String resPath = extractAssets();
         String configDir = getFilesDir().getAbsolutePath() + "/";
 
-        // Load native libraries manually so nativeSetenv is available
-        // before super.onCreate starts the SDL thread
         for (String lib : getLibraries()) {
             SDL.loadLibrary(lib);
         }
 
-        // Set environment variables BEFORE super.onCreate starts the SDL thread
         nativeSetenv("BOREALIS_RESOURCES", resPath);
         nativeSetenv("CHIAKI_CONFIG_DIR", configDir);
 
@@ -41,11 +43,55 @@ public class ChiakiActivity extends SDLActivity {
         super.onCreate(savedInstanceState);
     }
 
+    /**
+     * Called from native code to show a text input dialog.
+     * Runs on UI thread, returns result via nativeTextInputResult callback.
+     */
+    public static void showTextInputDialog(String title, String initialText, int maxLength) {
+        final SDLActivity activity = (SDLActivity) SDLActivity.getContext();
+        activity.runOnUiThread(() -> {
+            final EditText editText = new EditText(activity);
+            editText.setText(initialText);
+            editText.setSelection(initialText.length());
+            if (maxLength > 0) {
+                editText.setFilters(new android.text.InputFilter[]{
+                    new android.text.InputFilter.LengthFilter(maxLength)
+                });
+            }
+
+            FrameLayout container = new FrameLayout(activity);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.leftMargin = 48;
+            params.rightMargin = 48;
+            editText.setLayoutParams(params);
+            container.addView(editText);
+
+            new AlertDialog.Builder(activity)
+                .setTitle(title)
+                .setView(container)
+                .setPositiveButton("OK", (dialog, which) -> {
+                    String result = editText.getText().toString();
+                    nativeTextInputResult(result, true);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    nativeTextInputResult("", false);
+                })
+                .setOnCancelListener(dialog -> {
+                    nativeTextInputResult("", false);
+                })
+                .show();
+
+            editText.requestFocus();
+        });
+    }
+
     private String extractAssets() {
         String destDir = getFilesDir().getAbsolutePath() + "/res/";
         File dest = new File(destDir);
 
-        // Check if already extracted (simple marker file)
         File marker = new File(destDir, ".extracted");
         if (marker.exists()) {
             Log.i(TAG, "Assets already extracted");
@@ -70,15 +116,11 @@ public class ChiakiActivity extends SDLActivity {
             String srcPath = srcDir.isEmpty() ? item : srcDir + "/" + item;
             String destPath = destDir + "/" + (srcDir.isEmpty() ? item : srcDir + "/" + item);
 
-            // Try to list as directory
             String[] children = am.list(srcPath);
             if (children != null && children.length > 0) {
-                // It's a directory
                 new File(destPath).mkdirs();
-                // For subdirectories, we need to copy recursively but with flat destDir
                 copyAssetDirRecursive(am, srcPath, destDir + "/" + srcPath + "/");
             } else {
-                // It's a file
                 File destFile = new File(destPath);
                 destFile.getParentFile().mkdirs();
                 copyAssetFile(am, srcPath, destFile);
@@ -132,7 +174,6 @@ public class ChiakiActivity extends SDLActivity {
 
     @Override
     public void onBackPressed() {
-        // Don't finish the activity. BACK is handled by borealis via SDL key events.
     }
 
     @Override
@@ -140,9 +181,6 @@ public class ChiakiActivity extends SDLActivity {
         int keyCode = event.getKeyCode();
         int action = event.getAction();
 
-        // Intercept DPAD and navigation keys to ensure they reach SDL as keyboard events
-        // On Android TV, these may be consumed by SDLControllerManager as joystick events
-        // before reaching the keyboard handler
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK:
                 if (action == KeyEvent.ACTION_DOWN) onNativeKeyDown(KeyEvent.KEYCODE_BACK);
@@ -150,7 +188,6 @@ public class ChiakiActivity extends SDLActivity {
                 return true;
 
             case KeyEvent.KEYCODE_DPAD_CENTER:
-                // Remap to ENTER so SDL maps it to SDL_SCANCODE_RETURN (borealis BUTTON_A)
                 if (action == KeyEvent.ACTION_DOWN) onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
                 else if (action == KeyEvent.ACTION_UP) onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
                 return true;
@@ -159,7 +196,6 @@ public class ChiakiActivity extends SDLActivity {
             case KeyEvent.KEYCODE_DPAD_DOWN:
             case KeyEvent.KEYCODE_DPAD_LEFT:
             case KeyEvent.KEYCODE_DPAD_RIGHT:
-                // Send DPAD as native key events directly
                 if (action == KeyEvent.ACTION_DOWN) onNativeKeyDown(keyCode);
                 else if (action == KeyEvent.ACTION_UP) onNativeKeyUp(keyCode);
                 return true;

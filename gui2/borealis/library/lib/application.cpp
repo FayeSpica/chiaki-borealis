@@ -379,50 +379,13 @@ bool Application::mainLoop()
                 break;
 
             case SDL_KEYDOWN:
-                if (Application::textInputActive)
-                {
-                    // RETURN/ENTER: ignore from soft keyboard, only dialog OK button confirms
-                    // BACK/ESCAPE: cancel input
-                    if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_AC_BACK)
-                        Application::stopTextInput(false);
-                    else if (event.key.keysym.sym == SDLK_BACKSPACE && !Application::textInputBuffer.empty())
-                    {
-                        Application::textInputBuffer.pop_back();
-                        Application::updateTextInputDialog();
-                    }
-                }
-                else
+                if (!Application::textInputActive)
                 {
                     // Directly trigger borealis button press from key event
                     // (polling via SDL_GetKeyboardState misses short key presses on Android)
                     int btn = sdlKeyToButton(event.key.keysym.sym);
                     if (btn >= 0)
                         Application::onGamepadButtonPressed(btn, false);
-                }
-                break;
-
-            case SDL_TEXTINPUT:
-                if (Application::textInputActive)
-                {
-                    if ((int)Application::textInputBuffer.length() < Application::textInputMaxLength)
-                    {
-                        Application::textInputBuffer += event.text.text;
-                        Application::updateTextInputDialog();
-                    }
-                }
-                break;
-
-            case SDL_CONTROLLERBUTTONDOWN:
-                if (Application::textInputActive)
-                {
-                    // B button cancels text input
-                    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_B ||
-                        event.cbutton.button == SDL_CONTROLLER_BUTTON_BACK)
-                        Application::stopTextInput(false);
-                    // A button confirms text input
-                    else if (event.cbutton.button == SDL_CONTROLLER_BUTTON_A ||
-                             event.cbutton.button == SDL_CONTROLLER_BUTTON_START)
-                        Application::stopTextInput(true);
                 }
                 break;
 
@@ -454,34 +417,6 @@ bool Application::mainLoop()
     {
         Application::exit();
         return false;
-    }
-
-    // Skip controller/gamepad processing while text input is active
-    if (Application::textInputActive)
-    {
-        // Still render frames
-        GLint viewport[4];
-        glGetIntegerv(GL_VIEWPORT, viewport);
-        unsigned newWidth  = viewport[2];
-        unsigned newHeight = viewport[3];
-        if (Application::windowWidth != newWidth || Application::windowHeight != newHeight)
-        {
-            Application::windowWidth  = newWidth;
-            Application::windowHeight = newHeight;
-            Application::onWindowSizeChanged();
-        }
-        menu_animation_update();
-        Application::taskManager->frame();
-        Application::frame();
-        SDL_GL_SwapWindow(window);
-        if (Application::frameTime > 0.0f)
-        {
-            retro_time_t currentFrameTime = cpu_features_get_time_usec() - frameStart;
-            retro_time_t ft = (retro_time_t)(Application::frameTime * 1000);
-            if (ft > currentFrameTime)
-                std::this_thread::sleep_for(std::chrono::microseconds(ft - currentFrameTime));
-        }
-        return true;
     }
 
     // Read controller state
@@ -583,6 +518,43 @@ void Application::quit()
     Application::shouldClose = true;
 }
 
+#ifdef ANDROID
+#include <jni.h>
+
+// JNI call to show Android native text input dialog
+static void showAndroidTextInput(const std::string& title, const std::string& initial, int maxLen)
+{
+    JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+    jobject activity = (jobject)SDL_AndroidGetActivity();
+    jclass clazz = env->GetObjectClass(activity);
+
+    jmethodID method = env->GetStaticMethodID(clazz, "showTextInputDialog",
+        "(Ljava/lang/String;Ljava/lang/String;I)V");
+
+    jstring jTitle = env->NewStringUTF(title.c_str());
+    jstring jInitial = env->NewStringUTF(initial.c_str());
+
+    env->CallStaticVoidMethod(clazz, method, jTitle, jInitial, (jint)maxLen);
+
+    env->DeleteLocalRef(jTitle);
+    env->DeleteLocalRef(jInitial);
+    env->DeleteLocalRef(clazz);
+    env->DeleteLocalRef(activity);
+}
+
+// JNI callback from Java when text input dialog completes
+extern "C" JNIEXPORT void JNICALL
+Java_com_chiaki_borealis_ChiakiActivity_nativeTextInputResult(
+    JNIEnv* env, jclass clazz, jstring text, jboolean submitted)
+{
+    const char* cText = env->GetStringUTFChars(text, nullptr);
+    std::string result(cText);
+    env->ReleaseStringUTFChars(text, cText);
+
+    Application::onTextInputResult(result, (bool)submitted);
+}
+#endif // ANDROID
+
 void Application::startTextInput(const std::string& header, const std::string& initial, int maxLen, std::function<void(std::string)> cb)
 {
     Application::textInputActive = true;
@@ -591,38 +563,24 @@ void Application::startTextInput(const std::string& header, const std::string& i
     Application::textInputMaxLength = maxLen;
     Application::textInputCallback = cb;
 
-    // Build display text
-    std::string displayText = header + "\n\n> " + initial + "_";
-
-    auto* dialog = new Dialog(displayText);
-    dialog->setCancelable(false);
-    dialog->addButton("Cancel", [](View* view) {
-        Application::stopTextInput(false);
-    });
-    dialog->addButton("OK", [](View* view) {
-        Application::stopTextInput(true);
-    });
-    dialog->open();
-    Application::textInputDialog = dialog;
-
+#ifdef ANDROID
+    // Use Android native AlertDialog with EditText
+    showAndroidTextInput(header, initial, maxLen);
+#else
     SDL_Rect rect = {0, 360, 1280, 360};
     SDL_SetTextInputRect(&rect);
     SDL_StartTextInput();
+#endif
 
     Logger::info("Text input started: {}", header);
 }
 
 void Application::stopTextInput(bool submit)
 {
+#ifndef ANDROID
     SDL_StopTextInput();
+#endif
     Application::textInputActive = false;
-
-    // Close the dialog
-    if (Application::textInputDialog)
-    {
-        Application::textInputDialog->close();
-        Application::textInputDialog = nullptr;
-    }
 
     if (submit && Application::textInputCallback && !Application::textInputBuffer.empty())
     {
@@ -639,11 +597,25 @@ void Application::stopTextInput(bool submit)
     Logger::info("Text input stopped, submit={}", submit);
 }
 
+void Application::onTextInputResult(const std::string& text, bool submitted)
+{
+    Application::textInputActive = false;
+
+    if (submitted && Application::textInputCallback && !text.empty())
+    {
+        auto cb = Application::textInputCallback;
+        Application::textInputCallback = nullptr;
+        cb(text);
+    }
+    else
+    {
+        Application::textInputCallback = nullptr;
+    }
+}
+
 void Application::updateTextInputDialog()
 {
-    // Just notify with current text - don't recreate dialog
-    // The dialog stays open, we show progress via notification
-    Application::notify("> " + Application::textInputBuffer + "_");
+    // No-op on Android (native dialog handles its own updates)
 }
 
 #else // GLFW backend
