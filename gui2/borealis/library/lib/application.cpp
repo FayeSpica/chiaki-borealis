@@ -99,24 +99,23 @@ static void sdlWindowSizeChanged(int width, int height)
     Logger::info("New scale factor is {}", Application::windowScale);
 }
 
-static void sdlHandleKeyEvent(SDL_Keycode key, bool pressed, BrlsGamepadState& gamepad)
+// Returns the borealis button index for a given SDL keycode, or -1
+static int sdlKeyToButton(SDL_Keycode key)
 {
-    if (!pressed) return;
-
-    // Keyboard -> DPAD Mapping
     switch (key)
     {
-        case SDLK_LEFT:   gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_LEFT]    = BRLS_PRESS; break;
-        case SDLK_RIGHT:  gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_RIGHT]   = BRLS_PRESS; break;
-        case SDLK_UP:     gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_UP]      = BRLS_PRESS; break;
-        case SDLK_DOWN:   gamepad.buttons[BRLS_GAMEPAD_BUTTON_DPAD_DOWN]    = BRLS_PRESS; break;
-        case SDLK_RETURN: gamepad.buttons[BRLS_GAMEPAD_BUTTON_A]            = BRLS_PRESS; break;
-        case SDLK_BACKSPACE: gamepad.buttons[BRLS_GAMEPAD_BUTTON_B]         = BRLS_PRESS; break;
-        case SDLK_ESCAPE: gamepad.buttons[BRLS_GAMEPAD_BUTTON_START]        = BRLS_PRESS; break;
-        case SDLK_F1:     gamepad.buttons[BRLS_GAMEPAD_BUTTON_BACK]         = BRLS_PRESS; break;
-        case SDLK_l:      gamepad.buttons[BRLS_GAMEPAD_BUTTON_LEFT_BUMPER]  = BRLS_PRESS; break;
-        case SDLK_r:      gamepad.buttons[BRLS_GAMEPAD_BUTTON_RIGHT_BUMPER] = BRLS_PRESS; break;
-        default: break;
+        case SDLK_LEFT:      return BRLS_GAMEPAD_BUTTON_DPAD_LEFT;
+        case SDLK_RIGHT:     return BRLS_GAMEPAD_BUTTON_DPAD_RIGHT;
+        case SDLK_UP:        return BRLS_GAMEPAD_BUTTON_DPAD_UP;
+        case SDLK_DOWN:      return BRLS_GAMEPAD_BUTTON_DPAD_DOWN;
+        case SDLK_RETURN:    return BRLS_GAMEPAD_BUTTON_A;
+        case SDLK_BACKSPACE: return BRLS_GAMEPAD_BUTTON_B;
+        case SDLK_ESCAPE:    return BRLS_GAMEPAD_BUTTON_START;
+        case SDLK_AC_BACK:   return BRLS_GAMEPAD_BUTTON_B;
+        case SDLK_F1:        return BRLS_GAMEPAD_BUTTON_BACK;
+        case SDLK_l:         return BRLS_GAMEPAD_BUTTON_LEFT_BUMPER;
+        case SDLK_r:         return BRLS_GAMEPAD_BUTTON_RIGHT_BUMPER;
+        default:             return -1;
     }
 }
 
@@ -393,7 +392,11 @@ bool Application::mainLoop()
                 }
                 else
                 {
-                    sdlHandleKeyEvent(event.key.keysym.sym, true, Application::gamepad);
+                    // Directly trigger borealis button press from key event
+                    // (polling via SDL_GetKeyboardState misses short key presses on Android)
+                    int btn = sdlKeyToButton(event.key.keysym.sym);
+                    if (btn >= 0)
+                        Application::onGamepadButtonPressed(btn, false);
                 }
                 break;
 

@@ -138,27 +138,31 @@ public class ChiakiActivity extends SDLActivity {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         int keyCode = event.getKeyCode();
+        int action = event.getAction();
 
-        // BACK: send as native keyboard event instead of finishing activity
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                onNativeKeyDown(KeyEvent.KEYCODE_BACK);
+        // Intercept DPAD and navigation keys to ensure they reach SDL as keyboard events
+        // On Android TV, these may be consumed by SDLControllerManager as joystick events
+        // before reaching the keyboard handler
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BACK:
+                if (action == KeyEvent.ACTION_DOWN) onNativeKeyDown(KeyEvent.KEYCODE_BACK);
+                else if (action == KeyEvent.ACTION_UP) onNativeKeyUp(KeyEvent.KEYCODE_BACK);
                 return true;
-            } else if (event.getAction() == KeyEvent.ACTION_UP) {
-                onNativeKeyUp(KeyEvent.KEYCODE_BACK);
-                return true;
-            }
-        }
 
-        // DPAD_CENTER: remap to ENTER so SDL maps it to SDL_SCANCODE_RETURN
-        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-            if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+                // Remap to ENTER so SDL maps it to SDL_SCANCODE_RETURN (borealis BUTTON_A)
+                if (action == KeyEvent.ACTION_DOWN) onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
+                else if (action == KeyEvent.ACTION_UP) onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
                 return true;
-            } else if (event.getAction() == KeyEvent.ACTION_UP) {
-                onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
+
+            case KeyEvent.KEYCODE_DPAD_UP:
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                // Send DPAD as native key events directly
+                if (action == KeyEvent.ACTION_DOWN) onNativeKeyDown(keyCode);
+                else if (action == KeyEvent.ACTION_UP) onNativeKeyUp(keyCode);
                 return true;
-            }
         }
 
         return super.dispatchKeyEvent(event);
