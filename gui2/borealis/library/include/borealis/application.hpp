@@ -208,6 +208,7 @@ class Application
   public:
     static void startTextInput(const std::string& header, const std::string& initial, int maxLen, std::function<void(std::string)> cb);
     static void stopTextInput(bool submit);
+    static void updateTextInputDialog();
     static bool isTextInputActive() { return textInputActive; }
   private:
 #else

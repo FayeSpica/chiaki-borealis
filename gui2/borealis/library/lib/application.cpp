@@ -388,6 +388,7 @@ bool Application::mainLoop()
                     else if (event.key.keysym.sym == SDLK_BACKSPACE && !Application::textInputBuffer.empty())
                     {
                         Application::textInputBuffer.pop_back();
+                        Application::updateTextInputDialog();
                     }
                 }
                 else
@@ -404,7 +405,10 @@ bool Application::mainLoop()
                 if (Application::textInputActive)
                 {
                     if ((int)Application::textInputBuffer.length() < Application::textInputMaxLength)
+                    {
                         Application::textInputBuffer += event.text.text;
+                        Application::updateTextInputDialog();
+                    }
                 }
                 break;
 
@@ -587,6 +591,9 @@ void Application::startTextInput(const std::string& header, const std::string& i
     Application::textInputMaxLength = maxLen;
     Application::textInputCallback = cb;
 
+    // Show a dialog with current input text
+    Application::updateTextInputDialog();
+
     SDL_Rect rect = {0, 360, 1280, 360};
     SDL_SetTextInputRect(&rect);
     SDL_StartTextInput();
@@ -598,6 +605,13 @@ void Application::stopTextInput(bool submit)
 {
     SDL_StopTextInput();
     Application::textInputActive = false;
+
+    // Close the dialog first
+    if (Application::textInputDialog)
+    {
+        Application::textInputDialog->close();
+        Application::textInputDialog = nullptr;
+    }
 
     if (submit && Application::textInputCallback && !Application::textInputBuffer.empty())
     {
@@ -612,6 +626,31 @@ void Application::stopTextInput(bool submit)
     }
 
     Logger::info("Text input stopped, submit={}", submit);
+}
+
+void Application::updateTextInputDialog()
+{
+    // Close previous dialog
+    if (Application::textInputDialog)
+    {
+        Application::textInputDialog->close();
+        Application::textInputDialog = nullptr;
+    }
+
+    // Build display text
+    std::string displayText = Application::textInputHeader + "\n\n";
+    displayText += "> " + Application::textInputBuffer + "_";
+
+    auto* dialog = new Dialog(displayText);
+    dialog->setCancelable(false);
+    dialog->addButton("Cancel", [](View* view) {
+        Application::stopTextInput(false);
+    });
+    dialog->addButton("OK", [](View* view) {
+        Application::stopTextInput(true);
+    });
+    dialog->open();
+    Application::textInputDialog = dialog;
 }
 
 #else // GLFW backend
