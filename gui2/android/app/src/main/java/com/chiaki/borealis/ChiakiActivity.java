@@ -53,6 +53,11 @@ public class ChiakiActivity extends SDLActivity {
             final EditText editText = new EditText(activity);
             editText.setText(initialText);
             editText.setSelection(initialText.length());
+            editText.setHint(title);
+            editText.setTextColor(0xFFFFFFFF);
+            editText.setHintTextColor(0xFF888888);
+            editText.setBackgroundColor(0xFF2D2D2D);
+            editText.setPadding(32, 24, 32, 24);
             if (maxLength > 0) {
                 editText.setFilters(new android.text.InputFilter[]{
                     new android.text.InputFilter.LengthFilter(maxLength)
@@ -60,29 +65,35 @@ public class ChiakiActivity extends SDLActivity {
             }
 
             FrameLayout container = new FrameLayout(activity);
+            container.setBackgroundColor(0xFF1A1A2E);
+            container.setPadding(48, 32, 48, 32);
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
             );
-            params.leftMargin = 48;
-            params.rightMargin = 48;
             editText.setLayoutParams(params);
             container.addView(editText);
 
-            new AlertDialog.Builder(activity)
-                .setTitle(title)
+            AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar)
                 .setView(container)
-                .setPositiveButton("OK", (dialog, which) -> {
+                .setPositiveButton("OK", (d, which) -> {
                     String result = editText.getText().toString();
                     nativeTextInputResult(result, true);
                 })
-                .setNegativeButton("Cancel", (dialog, which) -> {
+                .setNegativeButton("Cancel", (d, which) -> {
                     nativeTextInputResult("", false);
                 })
-                .setOnCancelListener(dialog -> {
+                .setOnCancelListener(d -> {
                     nativeTextInputResult("", false);
                 })
-                .show();
+                .create();
+
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.show();
+
+            // Style buttons to match dark theme
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(0xFF00E68A);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF888888);
 
             editText.requestFocus();
         });
