@@ -381,9 +381,9 @@ bool Application::mainLoop()
             case SDL_KEYDOWN:
                 if (Application::textInputActive)
                 {
-                    if (event.key.keysym.sym == SDLK_RETURN || event.key.keysym.sym == SDLK_KP_ENTER)
-                        Application::stopTextInput(true);
-                    else if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_AC_BACK)
+                    // RETURN/ENTER: ignore from soft keyboard, only dialog OK button confirms
+                    // BACK/ESCAPE: cancel input
+                    if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_AC_BACK)
                         Application::stopTextInput(false);
                     else if (event.key.keysym.sym == SDLK_BACKSPACE && !Application::textInputBuffer.empty())
                     {
